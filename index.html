@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ScriptWriter Pro — Pre-production scripting for YouTube creators</title>
+  <meta name="description" content="ScriptWriter Pro is a free, open-source desktop app for planning, scripting, timing and rehearsing YouTube videos — from scene outline to timed, teleprompter-ready delivery." />
+  <meta property="og:title" content="ScriptWriter Pro" />
+  <meta property="og:description" content="Plan, script, time and rehearse your videos before you hit record." />
+  <meta property="og:type" content="website" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #09090b;
+      --bg-soft: #0f0f12;
+      --surface-1: #141416;
+      --surface-2: #1c1c1f;
+      --surface-3: #26262a;
+      --border: rgba(255, 255, 255, 0.08);
+      --text: #e4e4e7;
+      --text-muted: #9ca3af;
+      --text-dim: #71717a;
+      --accent: #6366f1;
+      --accent-hover: #818cf8;
+      --amber: #f59e0b;
+      --emerald: #22c55e;
+      --sky: #0ea5e9;
+      --radius: 16px;
+      --font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    a { color: inherit; text-decoration: none; }
+    img, svg { display: block; }
+
+    .container {
+      width: 100%;
+      max-width: 1160px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* ---------- Background glow ---------- */
+    .bg-glow {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .bg-glow::before,
+    .bg-glow::after {
+      content: "";
+      position: absolute;
+      width: 60vw;
+      height: 60vw;
+      border-radius: 50%;
+      filter: blur(120px);
+      opacity: 0.16;
+    }
+    .bg-glow::before {
+      background: var(--accent);
+      top: -20vw;
+      left: -10vw;
+    }
+    .bg-glow::after {
+      background: #7c3aed;
+      top: 10vh;
+      right: -25vw;
+    }
+
+    /* ---------- Nav ---------- */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      backdrop-filter: blur(14px);
+      background: rgba(9, 9, 11, 0.72);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      height: 68px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 700;
+      font-size: 15px;
+      letter-spacing: -0.01em;
+    }
+    .brand .logo {
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
+      flex-shrink: 0;
+    }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-left: 8px;
+    }
+    .nav-links a {
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 14px;
+      color: var(--text-muted);
+      transition: color .15s, background .15s;
+    }
+    .nav-links a:hover { color: var(--text); background: var(--surface-2); }
+    .nav-cta {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-weight: 600;
+      font-size: 14px;
+      padding: 10px 18px;
+      border-radius: 10px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: transform .12s ease, background .15s, border-color .15s, color .15s;
+      white-space: nowrap;
+    }
+    .btn:active { transform: translateY(1px); }
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-ghost {
+      background: transparent;
+      color: var(--text);
+      border-color: var(--border);
+    }
+    .btn-ghost:hover { background: var(--surface-2); }
+    .btn-lg { padding: 14px 26px; font-size: 15px; border-radius: 12px; }
+
+    .hamburger {
+      display: none;
+      background: none;
+      border: none;
+      color: var(--text);
+      cursor: pointer;
+      padding: 8px;
+      margin-left: auto;
+    }
+
+    /* ---------- Hero ---------- */
+    header.hero {
+      padding: 96px 0 64px;
+      text-align: center;
+      position: relative;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--surface-1);
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 28px;
+    }
+    .badge .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--emerald); box-shadow: 0 0 12px var(--emerald); }
+    .hero h1 {
+      font-size: clamp(34px, 6vw, 64px);
+      font-weight: 800;
+      letter-spacing: -0.035em;
+      line-height: 1.05;
+      max-width: 860px;
+      margin: 0 auto 24px;
+    }
+    .hero h1 .grad {
+      background: linear-gradient(100deg, #818cf8, #a78bfa 45%, #f59e0b);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .hero p.lead {
+      font-size: clamp(16px, 2.2vw, 19px);
+      color: var(--text-muted);
+      max-width: 640px;
+      margin: 0 auto 36px;
+    }
+    .hero-ctas {
+      display: flex;
+      gap: 14px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+    .hero-note {
+      font-size: 13px;
+      color: var(--text-dim);
+    }
+
+    /* ---------- Stats ---------- */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      max-width: 840px;
+      margin: 72px auto 0;
+    }
+    .stat {
+      background: var(--surface-1);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px 16px;
+      text-align: center;
+    }
+    .stat .num {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    .stat .label { font-size: 12.5px; color: var(--text-dim); margin-top: 4px; }
+
+    /* ---------- App mockup ---------- */
+    .mockup-wrap {
+      margin-top: 72px;
+      position: relative;
+    }
+    .mockup-wrap::before {
+      content: "";
+      position: absolute;
+      inset: 8% -10% -6%;
+      background: radial-gradient(closest-side, rgba(99, 102, 241, 0.28), transparent 70%);
+      filter: blur(40px);
+      z-index: -1;
+    }
+    .mockup {
+      max-width: 1020px;
+      margin: 0 auto;
+      background: linear-gradient(180deg, #131316, #0d0d10);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: 0 40px 120px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255,255,255,0.02);
+      overflow: hidden;
+      text-align: left;
+    }
+    .mockup-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      height: 42px;
+      padding: 0 16px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+    }
+    .mockup-bar .tl { width: 12px; height: 12px; border-radius: 50%; }
+    .mockup-bar .tl.r { background: #ff5f57; }
+    .mockup-bar .tl.y { background: #febc2e; }
+    .mockup-bar .tl.g { background: #28c840; }
+    .mockup-bar .title {
+      flex: 1;
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-dim);
+      font-family: var(--mono);
+    }
+    .mockup-grid {
+      display: grid;
+      grid-template-columns: 240px 1fr 220px;
+      min-height: 460px;
+    }
+    .mockup-col {
+      padding: 16px;
+      border-right: 1px solid var(--border);
+    }
+    .mockup-col:last-child { border-right: none; }
+    .mockup-col h4 {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-dim);
+      margin-bottom: 12px;
+    }
+    .mock-scene {
+      background: var(--surface-2);
+      border: 1px solid transparent;
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      cursor: default;
+    }
+    .mock-scene.sel { border-color: var(--accent); background: var(--surface-3); }
+    .mock-scene .row { display: flex; align-items: center; gap: 6px; }
+    .mock-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .mock-scene .t { font-size: 12.5px; font-weight: 600; }
+    .mock-scene .sub { font-size: 11px; color: var(--text-dim); margin-top: 3px; }
+    .mock-block {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 10px;
+      border-left: 3px solid var(--accent);
+      background: rgba(99, 102, 241, 0.08);
+      border-radius: 0 8px 8px 0;
+      margin: 4px 0 10px;
+      font-size: 10.5px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+    }
+    .mock-editor {
+      background: transparent;
+      padding: 24px 30px;
+    }
+    .mock-editor .doc {
+      max-width: 520px;
+      margin: 0 auto;
+    }
+    .mock-editor h3 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 18px;
+      letter-spacing: -0.01em;
+    }
+    .mock-editor .para {
+      font-size: 14.5px;
+      line-height: 1.75;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+    }
+    .mock-editor .para .hi {
+      background: rgba(99, 102, 241, 0.22);
+      color: #c7d2fe;
+      padding: 1px 3px;
+      border-radius: 4px;
+    }
+    .mock-editor .caret {
+      display: inline-block;
+      width: 2px;
+      height: 1em;
+      background: var(--accent);
+      vertical-align: text-bottom;
+      margin-left: 2px;
+      animation: blink 1.1s steps(2, start) infinite;
+    }
+    @keyframes blink { to { visibility: hidden; } }
+
+    .mock-timing .bar {
+      height: 6px;
+      border-radius: 999px;
+      background: var(--surface-3);
+      overflow: hidden;
+      margin-bottom: 14px;
+    }
+    .mock-timing .bar span {
+      display: block;
+      height: 100%;
+      width: 62%;
+      background: linear-gradient(90deg, var(--accent), var(--sky));
+    }
+    .mock-timing .kv { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); padding: 7px 0; border-bottom: 1px dashed var(--border); }
+    .mock-timing .kv b { color: var(--text); font-family: var(--mono); font-weight: 600; }
+
+    /* ---------- Sections ---------- */
+    section { padding: 96px 0; }
+    .section-head { text-align: center; max-width: 660px; margin: 0 auto 60px; }
+    .kicker {
+      display: inline-block;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent-hover);
+      margin-bottom: 14px;
+    }
+    .section-head h2 {
+      font-size: clamp(26px, 4vw, 40px);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+    }
+    .section-head p { color: var(--text-muted); margin-top: 16px; font-size: 16.5px; }
+
+    /* ---------- Features ---------- */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+    }
+    .feature {
+      background: var(--surface-1);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px 26px;
+      transition: border-color .2s, transform .2s, background .2s;
+    }
+    .feature:hover {
+      border-color: rgba(99, 102, 241, 0.4);
+      transform: translateY(-3px);
+      background: var(--surface-2);
+    }
+    .feature .ic {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 18px;
+      background: rgba(99, 102, 241, 0.12);
+      color: var(--accent-hover);
+    }
+    .feature h3 { font-size: 17px; font-weight: 700; margin-bottom: 10px; letter-spacing: -0.01em; }
+    .feature p { font-size: 14.5px; color: var(--text-muted); }
+
+    /* ---------- Workflow ---------- */
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+      counter-reset: step;
+    }
+    .step {
+      position: relative;
+      background: var(--surface-1);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 26px 24px;
+    }
+    .step::before {
+      counter-increment: step;
+      content: counter(step, decimal-leading-zero);
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--accent-hover);
+      display: block;
+      margin-bottom: 14px;
+    }
+    .step h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+    .step p { font-size: 14px; color: var(--text-muted); }
+
+    /* ---------- AI band ---------- */
+    .ai-band {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.16), rgba(167, 139, 250, 0.08) 50%, rgba(245, 158, 11, 0.06));
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 64px 56px;
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 48px;
+      align-items: center;
+      overflow: hidden;
+      position: relative;
+    }
+    .ai-band h2 { font-size: clamp(24px, 3.4vw, 34px); font-weight: 800; letter-spacing: -0.03em; line-height: 1.2; margin-bottom: 18px; }
+    .ai-band p { color: var(--text-muted); margin-bottom: 16px; }
+    .providers { display: flex; flex-wrap: wrap; gap: 10px; }
+    .provider {
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      color: var(--text);
+    }
+    .ai-list { list-style: none; }
+    .ai-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 14.5px;
+      color: var(--text-muted);
+    }
+    .ai-list li:last-child { border-bottom: none; }
+    .ai-list .tick { color: var(--emerald); font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+
+    /* ---------- Download ---------- */
+    .download-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+    }
+    .download-card {
+      background: var(--surface-1);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px 28px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+    .download-card .os { font-size: 34px; }
+    .download-card h3 { font-size: 17px; font-weight: 700; }
+    .download-card .ver { font-size: 12.5px; color: var(--text-dim); font-family: var(--mono); }
+    .download-card .btn { width: 100%; }
+    .download-card .alt { font-size: 12px; color: var(--text-dim); }
+
+    /* ---------- CTA ---------- */
+    .final-cta {
+      text-align: center;
+      padding: 100px 0;
+    }
+    .final-cta h2 {
+      font-size: clamp(28px, 5vw, 44px);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin-bottom: 16px;
+    }
+    .final-cta p { color: var(--text-muted); margin-bottom: 32px; }
+
+    /* ---------- Footer ---------- */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 48px 0;
+    }
+    .footer-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+    .footer-brand { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 14px; }
+    .footer-brand .logo { width: 26px; height: 26px; border-radius: 7px; }
+    .footer-links { display: flex; gap: 22px; flex-wrap: wrap; }
+    .footer-links a { font-size: 13.5px; color: var(--text-muted); }
+    .footer-links a:hover { color: var(--text); }
+    .footer-copy { width: 100%; text-align: center; font-size: 12.5px; color: var(--text-dim); margin-top: 8px; }
+
+    /* ---------- Reveal animation ---------- */
+    .reveal { opacity: 0; transform: translateY(24px); transition: opacity .7s ease, transform .7s ease; }
+    .reveal.visible { opacity: 1; transform: none; }
+
+    /* ---------- Responsive ---------- */
+    @media (max-width: 920px) {
+      .mockup-grid { grid-template-columns: 1fr; }
+      .mockup-col { border-right: none; border-bottom: 1px solid var(--border); }
+      .mockup-col:last-child { border-bottom: none; }
+      .features-grid { grid-template-columns: repeat(2, 1fr); }
+      .steps { grid-template-columns: repeat(2, 1fr); }
+      .ai-band { grid-template-columns: 1fr; padding: 44px 32px; }
+      .stats { grid-template-columns: repeat(2, 1fr); }
+      .download-grid { grid-template-columns: 1fr; max-width: 400px; margin: 0 auto; }
+    }
+    @media (max-width: 620px) {
+      .nav-links { display: none; }
+      .nav-links.open {
+        display: flex;
+        flex-direction: column;
+        position: absolute;
+        top: 68px;
+        left: 0;
+        right: 0;
+        background: var(--bg-soft);
+        border-bottom: 1px solid var(--border);
+        padding: 12px 16px;
+        gap: 6px;
+      }
+      .nav-cta .btn-ghost { display: none; }
+      .hamburger { display: block; }
+      .features-grid { grid-template-columns: 1fr; }
+      .steps { grid-template-columns: 1fr; }
+      .hero { padding: 64px 0 40px; }
+      section { padding: 64px 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-glow" aria-hidden="true"></div>
+
+  <nav>
+    <div class="container nav-inner">
+      <a class="brand" href="#top">
+        <svg class="logo" viewBox="0 0 512 512" aria-hidden="true">
+          <rect width="512" height="512" rx="112" fill="#0F172A"/>
+          <rect x="1" y="1" width="510" height="510" rx="111" stroke="#1E293B" stroke-width="2" fill="none"/>
+          <path d="M 168 168 L 280 256 L 168 344" stroke="#F8FAFC" stroke-width="36" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          <path d="M 264 344 L 360 344" stroke="#F59E0B" stroke-width="36" stroke-linecap="round"/>
+        </svg>
+        ScriptWriter&nbsp;Pro
+      </a>
+
+      <div class="nav-links" id="navLinks">
+        <a href="#features">Features</a>
+        <a href="#workflow">Workflow</a>
+        <a href="#ai">AI</a>
+        <a href="#download">Download</a>
+      </div>
+
+      <div class="nav-cta">
+        <a class="btn btn-ghost" href="https://github.com/" target="_blank" rel="noopener">GitHub</a>
+        <a class="btn btn-primary" href="#download">Download free</a>
+      </div>
+
+      <button class="hamburger" id="hamburger" aria-label="Toggle menu" onclick="document.getElementById('navLinks').classList.toggle('open')">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <header class="hero" id="top">
+    <div class="container">
+      <span class="badge"><span class="dot"></span> Free &amp; open source · macOS · Windows · Linux</span>
+      <h1>Write, time &amp; rehearse your scripts <span class="grad">before you hit record.</span></h1>
+      <p class="lead">ScriptWriter Pro is the pre-production workspace for YouTube creators — plan scenes, draft scripts, dial in your pacing, and run a teleprompter, all in one focused desktop app.</p>
+      <div class="hero-ctas">
+        <a class="btn btn-primary btn-lg" href="#download">Download for free</a>
+        <a class="btn btn-ghost btn-lg" href="#features">See what's inside</a>
+      </div>
+      <div class="hero-note">GPL-2.0 licensed · No account · Works offline</div>
+
+      <div class="stats">
+        <div class="stat"><div class="num" style="color:#818cf8">8</div><div class="label">Scene roles</div></div>
+        <div class="stat"><div class="num" style="color:#f59e0b">3</div><div class="label">Desktop platforms</div></div>
+        <div class="stat"><div class="num" style="color:#22c55e">∞</div><div class="label">Takes per scene</div></div>
+        <div class="stat"><div class="num" style="color:#0ea5e9">WPM</div><div class="label">Pacing control</div></div>
+      </div>
+
+      <div class="mockup-wrap reveal">
+        <div class="mockup">
+          <div class="mockup-bar">
+            <span class="tl r"></span><span class="tl y"></span><span class="tl g"></span>
+            <span class="title">ScriptWriter Pro — My New Video.swproj</span>
+          </div>
+          <div class="mockup-grid">
+            <div class="mockup-col">
+              <h4>Scenes</h4>
+              <div class="mock-block">Block 1 · Hook &amp; Intro</div>
+              <div class="mock-scene sel"><div class="row"><span class="mock-dot" style="background:#ef4444"></span><span class="t">The Hook</span></div><div class="sub">0:08 · 34 words</div></div>
+              <div class="mock-scene"><div class="row"><span class="mock-dot" style="background:#f59e0b"></span><span class="t">Intro</span></div><div class="sub">0:20 · 48 words</div></div>
+              <div class="mock-block" style="border-left-color:#0ea5e9">Block 2 · Main Points</div>
+              <div class="mock-scene"><div class="row"><span class="mock-dot" style="background:#22c55e"></span><span class="t">Point 1</span></div><div class="sub">1:00 · 145 words</div></div>
+              <div class="mock-scene"><div class="row"><span class="mock-dot" style="background:#06b6d4"></span><span class="t">Demo</span></div><div class="sub">0:45 · 109 words</div></div>
+              <div class="mock-scene"><div class="row"><span class="mock-dot" style="background:#ec4899"></span><span class="t">Call to action</span></div><div class="sub">0:15 · 36 words</div></div>
+            </div>
+            <div class="mockup-col" style="border-right:none">
+              <div class="mock-editor">
+                <div class="doc">
+                  <h3>The Hook</h3>
+                  <p class="para">Most creators lose 90% of their viewers in the first 30 seconds. <span class="hi">Here's how to stop the scroll</span> and keep them watching to the very end.<span class="caret"></span></p>
+                  <p class="para">In this video, I'll show you the exact three-part hook formula I use across every upload — and how to time it so it lands before the intro even starts.</p>
+                </div>
+              </div>
+            </div>
+            <div class="mockup-col mock-timing">
+              <h4>Timing</h4>
+              <div class="bar"><span></span></div>
+              <div class="kv"><span>Words</span><b>34 / 34</b></div>
+              <div class="kv"><span>Est. time</span><b>0:08 / 0:08</b></div>
+              <div class="kv"><span>Pace</span><b>145 wpm</b></div>
+              <div class="kv"><span>Status</span><b style="color:var(--emerald)">✓ on time</b></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section id="features">
+    <div class="container">
+      <div class="section-head reveal">
+        <span class="kicker">Everything in one place</span>
+        <h2>A focused pre-production workflow</h2>
+        <p>From the first idea to a teleprompter-ready script — without jumping between tools.</p>
+      </div>
+      <div class="features-grid">
+        <div class="feature reveal">
+          <div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h7l2 2h7v12H4z"/><path d="M12 11v4M10 13h4"/></svg></div>
+          <h3>Plan with scenes &amp; blocks</h3>
+          <p>Structure every video from hook to CTA. Group related scenes into color-coded blocks and reorder freely to test your narrative flow.</p>
+        </div>
+        <div class="feature reveal">
+          <div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z" opacity=".4"/><path d="M7 8h10M7 12h7M7 16h9"/></svg></div>
+          <h3>Rich script editor</h3>
+          <p>Write in a distraction-free editor with per-scene metadata, lockable content, and a Google-Docs-style reading column built for long-form scripts.</p>
+        </div>
+        <div class="feature reveal">
+          <div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+          <h3>Timing &amp; pacing</h3>
+          <p>Set a speaking WPM, watch live word counts and estimates per scene, and fit your script to the timeline — or the timeline to your script.</p>
+        </div>
+        <div class="feature reveal">
+          <div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16M15 9l4 2-4 2z" fill="currentColor" stroke="none"/></svg></div>
+          <h3>Built-in teleprompter</h3>
+          <p>Present in sequence, timed, or continuous scrolling mode. Mirror the text, tune font size and speed, and keep perfect pace while you record.</p>
+        </div>
+        <div class="feature reveal">
+          <div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 15l.7 2.3L22 18l-2.3.7L19 21l-.7-2.3L16 18l2.3-.7z" opacity=".6"/></svg></div>
+          <h3>Optional AI assistant</h3>
+          <p>Generate scripts from a title, rewrite or expand selected text, and import TXT/DOCX — powered by your own key from OpenAI, Gemini, DeepSeek or Anthropic.</p>
+        </div>
+        <div class="feature reveal">
+          <div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 11l5 4 5-4"/><path d="M5 21h14"/></svg></div>
+          <h3>Export &amp; share</h3>
+          <p>Export timed scene plans and CSV breakdowns, generate YouTube chapter lists, and hand a production-ready plan straight to your edit.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="workflow">
+    <div class="container">
+      <div class="section-head reveal">
+        <span class="kicker">How it works</span>
+        <h2>From outline to on-camera in four steps</h2>
+      </div>
+      <div class="steps">
+        <div class="step reveal"><h3>Outline</h3><p>Break the video into hook, intro, points, demo, transition and CTA scenes — organized into blocks.</p></div>
+        <div class="step reveal"><h3>Write</h3><p>Draft each scene in the editor with live word counts, and let AI help refine the wording when you want it.</p></div>
+        <div class="step reveal"><h3>Time</h3><p>Set your speaking pace and watch estimated durations update. Fit the script to your target length.</p></div>
+        <div class="step reveal"><h3>Present &amp; export</h3><p>Rehearse with the teleprompter, then export a timed plan and chapters for the edit.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="ai">
+    <div class="container">
+      <div class="ai-band reveal">
+        <div>
+          <span class="kicker">Bring your own key</span>
+          <h2>AI when you want it, private by default</h2>
+          <p>AI features are completely optional. ScriptWriter Pro never requires an account, and you stay in control — connect the provider you already use and keep working offline the rest of the time.</p>
+          <div class="providers">
+            <span class="provider">OpenAI</span>
+            <span class="provider">Gemini</span>
+            <span class="provider">DeepSeek</span>
+            <span class="provider">Anthropic</span>
+            <span class="provider">OpenAI-compatible</span>
+          </div>
+        </div>
+        <ul class="ai-list">
+          <li><span class="tick">✓</span> Title-to-script generation</li>
+          <li><span class="tick">✓</span> Rewrite, expand &amp; shorten selected text</li>
+          <li><span class="tick">✓</span> TXT and DOCX import adaptation</li>
+          <li><span class="tick">✓</span> Your prompts, your provider key</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="download">
+    <div class="container">
+      <div class="section-head reveal">
+        <span class="kicker">Get started</span>
+        <h2>Download ScriptWriter Pro</h2>
+        <p>Free and open source. Choose your platform — or build it yourself from source.</p>
+      </div>
+      <div class="download-grid">
+        <div class="download-card reveal">
+          <div class="os">🍎</div>
+          <h3>macOS</h3>
+          <span class="ver">Apple Silicon · DMG</span>
+          <a class="btn btn-primary" href="#download">Download for macOS</a>
+          <span class="alt">Also available: zip</span>
+        </div>
+        <div class="download-card reveal">
+          <div class="os">🪟</div>
+          <h3>Windows</h3>
+          <span class="ver">x64 &amp; ARM · Setup</span>
+          <a class="btn btn-primary" href="#download">Download for Windows</a>
+          <span class="alt">Also available: portable</span>
+        </div>
+        <div class="download-card reveal">
+          <div class="os">🐧</div>
+          <h3>Linux</h3>
+          <span class="ver">ARM64 · AppImage</span>
+          <a class="btn btn-primary" href="#download">Download for Linux</a>
+          <span class="alt">Also available: from source</span>
+        </div>
+      </div>
+      <p style="text-align:center; margin-top:28px; font-size:13.5px; color:var(--text-dim);">Prefer to build from source? Clone the repo and run <span style="font-family:var(--mono); color:var(--text-muted)">npm install &amp;&amp; npm start</span></p>
+    </div>
+  </section>
+
+  <div class="final-cta">
+    <div class="container">
+      <h2>Stop guessing your pacing.<br>Start scripting with intent.</h2>
+      <p>Free, offline-first, and built for creators who plan before they produce.</p>
+      <a class="btn btn-primary btn-lg" href="#download">Download ScriptWriter Pro</a>
+    </div>
+  </div>
+
+  <footer>
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <svg class="logo" viewBox="0 0 512 512" aria-hidden="true">
+          <rect width="512" height="512" rx="112" fill="#0F172A"/>
+          <path d="M 168 168 L 280 256 L 168 344" stroke="#F8FAFC" stroke-width="36" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          <path d="M 264 344 L 360 344" stroke="#F59E0B" stroke-width="36" stroke-linecap="round"/>
+        </svg>
+        ScriptWriter Pro
+      </div>
+      <div class="footer-links">
+        <a href="#features">Features</a>
+        <a href="#workflow">Workflow</a>
+        <a href="#download">Download</a>
+        <a href="https://github.com/" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://github.com/" target="_blank" rel="noopener">Releases</a>
+        <a href="https://github.com/" target="_blank" rel="noopener">License</a>
+      </div>
+      <div class="footer-copy">© 2026 ScriptWriter Pro · Pre-production scripting for YouTube creators · GPL-2.0</div>
+    </div>
+  </footer>
+
+  <script>
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) entry.target.classList.add('visible');
+      });
+    }, { threshold: 0.12 });
+    document.querySelectorAll('.reveal').forEach((el) => observer.observe(el));
+  </script>
+</body>
+</html>
