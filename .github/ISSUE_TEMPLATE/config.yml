@@ -1,5 +1,0 @@
-blank_issues_enabled: false
-contact_links:
-  - name: Security
-    url: https://github.com/<owner>/<repo>/blob/main/SECURITY.md
-    about: Please report security vulnerabilities privately and do not open a public issue.
