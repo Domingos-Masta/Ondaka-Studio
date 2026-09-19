@@ -1,0 +1,22 @@
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.icns binary
+*.pdf binary
+*.zip binary
+*.exe binary
+*.dmg binary
+*.AppImage binary
+*.deb binary
+*.rpm binary
+
+*.swproj linguist-language=JSON
+
+dist/ linguist-generated=true
+release/ linguist-generated=true
+out/ linguist-generated=true
+node_modules/ linguist-generated=true

@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-and-validate:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [22, 24]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Type check
+        run: npx tsc -p tsconfig.json --noEmit
+
+      - name: Run lint if configured
+        shell: bash
+        run: |
+          if npm run | grep -q "lint"; then
+            npm run lint
+          else
+            echo "No lint script configured; skipping."
+          fi
+
+      - name: Run tests if configured
+        shell: bash
+        run: |
+          if npm run | grep -q "test"; then
+            npm test -- --run
+          else
+            echo "No test script configured; skipping."
+          fi
+
+      - name: Production build
+        run: npm run electron:build
+
+  cross-platform-smoke:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest]
+        node-version: [22]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Type check
+        run: npx tsc -p tsconfig.json --noEmit
+
+      # Electron packaging requires platform-specific native build steps and signing.
+      # Release artifacts are left to the release workflow.
+      - name: Renderer build smoke test
+        run: npx ng build --configuration production

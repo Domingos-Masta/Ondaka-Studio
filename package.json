@@ -1,0 +1,139 @@
+{
+  "name": "scriptwriter-pro",
+  "version": "1.0.4",
+  "main": "app/dist/main.js",
+  "description": "A cross-platform desktop application for scriptwriting, built with love for content creators.",
+  "homepage": "https://github.com/belnadris/angular-electron",
+  "author": {
+    "name": "Domingos Fernando",
+    "email": "domingos.m.fernando@gmail.com"
+  },
+  "keywords": [
+    "angular",
+    "angular 22",
+    "electron",
+    "electron 44",
+    "nodejs",
+    "typescript",
+    "vitest",
+    "playwright",
+    "eslint",
+    "sass",
+    "windows",
+    "mac",
+    "linux"
+  ],
+  "private": true,
+  "scripts": {
+    "start": "npm run ng:serve:web",
+    "electron:serve": "concurrently \"ng serve\" \"wait-on http://localhost:4200 && electron app/dist/main.js\"",
+    "electron:build": "ng build --configuration production && tsc -p app/tsconfig.json && electron-builder",
+    "electron:build-win": "ng build --configuration production && tsc -p app/tsconfig.json && electron-builder --win",
+    "electron:build-lnx": "ng build --configuration production && tsc -p app/tsconfig.json && electron-builder --linux"
+  },
+  "build": {
+    "appId": "com.scriptwriter.pro",
+    "productName": "ScriptWriter Pro",
+    "files": [
+      "dist/**/*",
+      "app/dist/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "extraResources": [
+      {
+        "from": "dist/browser",
+        "to": "dist/browser"
+      }
+    ],
+    "mac": {
+      "icon": "build/icons/swp-icon.icns",
+      "category": "public.app-category.video",
+      "target": [
+        "dmg",
+        "zip"
+      ]
+    },
+    "win": {
+      "icon": "build/icons/swp-icon.png",
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "linux": {
+      "icon": "build/icons/swp-icon.png",
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Video"
+    }
+  },
+  "dependencies": {
+    "@angular/cdk": "22.1.6",
+    "@angular/common": "22.1.4",
+    "@angular/compiler": "22.1.4",
+    "@angular/core": "22.1.4",
+    "@angular/forms": "22.1.4",
+    "@angular/language-service": "22.1.4",
+    "@angular/platform-browser": "22.1.4",
+    "@angular/router": "22.1.4",
+    "@domternal/angular": "1.1.1",
+    "@domternal/core": "1.1.1",
+    "@domternal/extension-block-controls": "1.1.1",
+    "@domternal/theme": "1.1.1",
+    "jspdf": "4.2.1",
+    "mammoth": "1.12.3",
+    "rxjs": "7.8.2",
+    "tslib": "2.8.1",
+    "zone.js": "0.16.2"
+  },
+  "devDependencies": {
+    "@angular-eslint/builder": "22.2.0",
+    "@angular-eslint/eslint-plugin": "22.2.0",
+    "@angular-eslint/eslint-plugin-template": "22.2.0",
+    "@angular-eslint/schematics": "22.2.0",
+    "@angular-eslint/template-parser": "22.2.0",
+    "@angular/build": "22.1.6",
+    "@angular/cli": "22.1.6",
+    "@angular/compiler-cli": "22.1.4",
+    "@eslint/js": "10.0.1",
+    "@ngx-translate/core": "18.0.0",
+    "@ngx-translate/http-loader": "18.0.0",
+    "@playwright/test": "1.62.1",
+    "@tailwindcss/postcss": "4.3.3",
+    "@types/node": "26.4.1",
+    "@typescript-eslint/eslint-plugin": "8.69.0",
+    "@typescript-eslint/parser": "8.69.0",
+    "@vitest/browser-playwright": "4.1.11",
+    "@vitest/coverage-v8": "4.1.11",
+    "@vitest/ui": "4.1.11",
+    "angular-eslint": "22.2.0",
+    "concurrently": "10.0.5",
+    "electron": "44.1.1",
+    "electron-builder": "26.15.3",
+    "electron-debug": "4.1.0",
+    "electron-reloader": "1.2.3",
+    "eslint": "10.9.1",
+    "jsdom": "30.0.1",
+    "playwright": "1.62.1",
+    "postcss": "8.5.28",
+    "tailwindcss": "4.3.3",
+    "ts-node": "10.9.2",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.69.0",
+    "vitest": "4.1.11",
+    "wait-on": "9.1.0"
+  },
+  "engines": {
+    "node": "^22.22.3 || ^24.15.0 || >=26.0.0",
+    "typescript": ">= 6.0.0 < 6.1.0"
+  },
+  "browserslist": [
+    "chrome 152"
+  ]
+}

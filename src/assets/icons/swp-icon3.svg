@@ -1,0 +1,26 @@
+<!-- 3. DARK-MODE HEADER LOGO (Inline Mark + Wordmark - 280x48) -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 48" width="280" height="48" fill="none">
+  <!-- Inline CueMark Symbol -->
+  <g transform="translate(4, 4)">
+    <!-- Chevron (>) -->
+    <path d="M 8 8 L 22 20 L 8 32" 
+          stroke="#F8FAFC" 
+          stroke-width="5" 
+          stroke-linecap="round" 
+          stroke-linejoin="round" />
+
+    <!-- Underline (_) -->
+    <path d="M 21 32 L 32 32" 
+          stroke="#F59E0B" 
+          stroke-width="5" 
+          stroke-linecap="round" />
+  </g>
+
+  <!-- Wordmark Text -->
+  <text x="52" y="31" 
+        fill="#F8FAFC" 
+        font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Inter', 'Geist', sans-serif" 
+        font-size="20" 
+        font-weight="700" 
+        letter-spacing="3.5">SCRIPTFLOW</text>
+</svg>

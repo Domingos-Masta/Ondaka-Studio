@@ -1,0 +1,82 @@
+/* src/styles.css */
+@import 'tailwindcss';
+@import '@domternal/theme/css';
+
+/* ------------------------------------------------------------------ */
+/* Design tokens                                                       */
+/* ------------------------------------------------------------------ */
+@theme {
+  --color-surface-0: #0a0a0b;
+  --color-surface-1: #141416;
+  --color-surface-2: #1c1c1f;
+  --color-surface-3: #26262a;
+  --color-accent: #6366f1;
+  --color-accent-hover: #818cf8;
+  --color-ok: #22c55e;
+  --color-warn: #f59e0b;
+  --color-over: #ef4444;
+}
+
+/* ------------------------------------------------------------------ */
+/* Domternal — dark theme + full-width editor                          */
+/* ------------------------------------------------------------------ */
+:root, .dark {
+  color-scheme: dark;
+}
+
+dm-editor,
+.dm-editor {
+  /* Fill the parent entirely — no intrinsic width. */
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;                 /* critical: lets flex/grid children shrink */
+  background: var(--color-surface-1);
+  border: none;
+}
+
+/* The ProseMirror content surface — this is where wrapping lives. */
+.dm-editor .ProseMirror,
+.dm-editor [contenteditable='true'] {
+  width: 100%;
+  max-width: 100%;
+  min-height: 100%;
+  box-sizing: border-box;
+
+  /* The three lines that actually fix your bug. */
+  white-space: pre-wrap;         /* preserve newlines, but wrap at container edge */
+  overflow-wrap: break-word;     /* break long words / URLs mid-token */
+  word-break: normal;            /* don't shred normal prose */
+
+  outline: none;
+  padding: 2.5rem max(3rem, calc((100% - 72ch) / 2));  /* Google-Docs-style centred column */
+  font-size: 1.0625rem;
+  line-height: 1.75;
+  color: #e4e4e7;
+}
+
+/* ProseMirror also sets inline styles on some nodes; force them to respect the parent. */
+.dm-editor .ProseMirror p,
+.dm-editor .ProseMirror h1,
+.dm-editor .ProseMirror h2,
+.dm-editor .ProseMirror h3,
+.dm-editor .ProseMirror li,
+.dm-editor .ProseMirror blockquote {
+  max-width: 100%;
+  overflow-wrap: break-word;
+}
+
+/* Code blocks DO need horizontal scroll — keep them self-contained. */
+.dm-editor .ProseMirror pre {
+  max-width: 100%;
+  overflow-x: auto;
+  white-space: pre;
+  overflow-wrap: normal;
+}
+
+/* Tables: allow them to scroll, not the whole editor. */
+.dm-editor .ProseMirror table {
+  max-width: 100%;
+  display: block;
+  overflow-x: auto;
+}

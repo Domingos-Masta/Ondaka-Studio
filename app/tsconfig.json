@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compileOnSave": false,
+
+  "compilerOptions": {
+    /* ------------------------------------------------------------------ */
+    /* Language & environment                                              */
+    /* ------------------------------------------------------------------ */
+    "target": "ES2022",
+    "lib": ["ES2023"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "types": ["node"],
+
+    /* ------------------------------------------------------------------ */
+    /* Emit                                                                */
+    /* ------------------------------------------------------------------ */
+    "outDir": "./dist",
+    "sourceMap": true,
+    "declaration": false,
+    "removeComments": false,
+    "importHelpers": false,
+    "noEmitOnError": true,
+    "newLine": "lf",
+
+    /* ------------------------------------------------------------------ */
+    /* Interop                                                             */
+    /* ------------------------------------------------------------------ */
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+
+    /* ------------------------------------------------------------------ */
+    /* Type checking — strict                                              */
+    /* ------------------------------------------------------------------ */
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitThis": true,
+    "useUnknownInCatchVariables": true,
+    "alwaysStrict": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "exactOptionalPropertyTypes": false,
+    "rootDir": ".",
+    "paths": {
+      "@src/*": ["./../src/*"],
+      "@core/*": ["./../src/app/core/*"]
+    },
+
+    /* ------------------------------------------------------------------ */
+    /* Module resolution                                                   */
+    /* ------------------------------------------------------------------ */
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "allowJs": false,
+    "checkJs": false,
+    "pretty": true
+  },
+
+  "include": [
+    "main.ts",
+    "preload.ts",
+    "settings-store.ts",
+    "app-settings.model.ts",
+  ],
+
+  "exclude": [
+    "node_modules",
+    "dist",
+    "../src",
+    "../dist",
+    "../release"
+  ]
+}

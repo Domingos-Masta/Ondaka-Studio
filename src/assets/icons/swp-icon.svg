@@ -1,0 +1,28 @@
+<!-- 1. APP ICON (512x512 Squircle with Inner Border & Drop Shadow) -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" fill="none">
+  <defs>
+    <filter id="icon-shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#000000" flood-opacity="0.35" />
+    </filter>
+  </defs>
+
+  <!-- Canvas Background -->
+  <rect width="512" height="512" rx="112" fill="#0F172A" filter="url(#icon-shadow)" />
+  <rect x="1" y="1" width="510" height="510" rx="111" stroke="#1E293B" stroke-width="2" fill="none" />
+
+  <!-- CueMark Group -->
+  <g transform="translate(136, 136)">
+    <!-- Chevron (>) -->
+    <path d="M 32 32 L 144 120 L 32 208" 
+          stroke="#F8FAFC" 
+          stroke-width="36" 
+          stroke-linecap="round" 
+          stroke-linejoin="round" />
+
+    <!-- Underline / Cursor Timeline Block (_) -->
+    <path d="M 128 208 L 224 208" 
+          stroke="#F59E0B" 
+          stroke-width="36" 
+          stroke-linecap="round" />
+  </g>
+</svg>
