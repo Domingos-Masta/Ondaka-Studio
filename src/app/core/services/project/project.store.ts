@@ -264,6 +264,102 @@ export class ProjectStore {
     for (const b of empty) this.removeBlock(b.id);
   }
 
+  /**
+   * Merge multiple scenes into a single scene. Scripts are concatenated
+   * (separated by a blank paragraph), durations are summed, and notes/assets
+   * are combined. The merged scene replaces the originals at the position of
+   * the first one, and any block membership for the merged scenes is removed.
+   */
+  mergeScenes(sceneIds: string[]): Scene | null {
+    const sorted = this.scenes();
+    const toMerge = sorted.filter(s => sceneIds.includes(s.id));
+
+    if (toMerge.length < 2) {
+      this.toast.show('Select at least two scenes to merge.', 'error');
+      return null;
+    }
+
+    const first = toMerge[0];
+    const script = toMerge
+      .map(s => (s.script || '').trim())
+      .filter(Boolean)
+      .join('<p><br></p>');
+
+    const merged: Scene = {
+      ...first,
+      id: uid(),
+      title: `${first.title} +${toMerge.length - 1}`,
+      script,
+      targetDurationSec: toMerge.reduce((sum, s) => sum + s.targetDurationSec, 0),
+      notes: toMerge.map(s => (s.notes || '').trim()).filter(Boolean).join('\n\n'),
+      assets: toMerge.flatMap(s => s.assets),
+      aiRevisions: toMerge.flatMap(s => s.aiRevisions ?? []),
+    };
+
+    const removeIds = new Set(toMerge.map(s => s.id));
+    const remaining = sorted.filter(s => !removeIds.has(s.id));
+    const insertIndex = sorted.findIndex(s => s.id === first.id);
+    const nextScenes = [
+      ...remaining.slice(0, insertIndex),
+      merged,
+      ...remaining.slice(insertIndex),
+    ].map((s, i) => ({ ...s, order: i }));
+
+    const blocks = (this.project()?.blocks ?? [])
+      .map(b => ({ ...b, sceneIds: b.sceneIds.filter(id => !removeIds.has(id)) }))
+      .filter(b => b.sceneIds.length >= 1);
+
+    this._project.update(p => ({
+      ...p,
+      scenes: nextScenes,
+      blocks,
+      updatedAt: new Date().toISOString(),
+    }));
+
+    this.toast.show(`Merged ${toMerge.length} scenes into one.`);
+    return merged;
+  }
+
+  /**
+   * Reorder an ungrouped scene within the ungrouped list. Blocked scenes keep
+   * their positions; only the relative order of ungrouped scenes changes. This
+   * keeps drag-and-drop in the scene list consistent with what is rendered
+   * (blocks first, then ungrouped scenes).
+   */
+  reorderUngroupedScene(sceneId: string, targetIndex: number): void {
+    const sorted = this.scenes();
+    const groupedIds = new Set(this.blocks().flatMap(b => b.sceneIds));
+    const ungrouped = sorted.filter(s => !groupedIds.has(s.id));
+
+    const from = ungrouped.findIndex(s => s.id === sceneId);
+    if (from < 0) return;
+
+    const [moved] = ungrouped.splice(from, 1);
+    const to = Math.max(0, Math.min(targetIndex, ungrouped.length));
+    ungrouped.splice(to, 0, moved);
+
+    const ungroupedIds = new Set(ungrouped.map(s => s.id));
+    let ui = 0;
+    const next = sorted
+      .map(s => (ungroupedIds.has(s.id) ? ungrouped[ui++] : s))
+      .map((s, i) => ({ ...s, order: i }));
+
+    this._project.update(p => ({
+      ...p,
+      scenes: next,
+      updatedAt: new Date().toISOString(),
+    }));
+  }
+
+  /** Remove the given scenes from whatever block they belong to, dropping empty blocks. */
+  removeScenesFromBlocks(sceneIds: string[]): void {
+    const remove = new Set(sceneIds);
+    const blocks = (this.project()?.blocks ?? [])
+      .map(b => ({ ...b, sceneIds: b.sceneIds.filter(id => !remove.has(id)) }))
+      .filter(b => b.sceneIds.length > 0);
+    this.updateProject(p => ({ ...p, blocks }));
+  }
+
   /** Call this from your existing reorderScenes after the flat scenes array is updated. */
   private reflowBlocksToSceneOrder(): void {
     const order = new Map(this.project().scenes.map((s, i) => [s.id, i]));

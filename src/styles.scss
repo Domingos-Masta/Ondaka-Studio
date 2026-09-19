@@ -33,6 +33,12 @@ dm-editor,
   min-height: 0;                 /* critical: lets flex/grid children shrink */
   background: var(--color-surface-1);
   border: none;
+
+  /* The editor host is the scroll container: long scripts must scroll
+     vertically instead of being clipped by the overflow-hidden flex parent. */
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
 }
 
 /* The ProseMirror content surface — this is where wrapping lives. */

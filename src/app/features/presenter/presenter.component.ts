@@ -5,6 +5,7 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ProjectStore } from '../../core/services/project/project.store';
+import type { SceneBlock } from '../../core/models/scene-block.model';
 
 
 @Component({
@@ -47,6 +48,11 @@ import { ProjectStore } from '../../core/services/project/project.store';
           <div class="continuous-document mx-auto max-w-prose w-full px-8 py-12"
                [style.font-size.px]="fontSize()">
             @for (item of continuousScenes(); track item.scene.id) {
+              @if (item.showBlockHeader && item.block) {
+                <div class="block-separator" [style.color]="item.block.color">
+                  <span class="block-separator-title">{{ item.block.title }}</span>
+                </div>
+              }
               <article class="scene-page">
                 <div class="scene-page-label">{{ item.scene.title }}</div>
                 <div class="presenter-text">{{ item.text }}</div>
@@ -114,6 +120,21 @@ import { ProjectStore } from '../../core/services/project/project.store';
       letter-spacing: 0.08em;
       text-transform: uppercase;
     }
+    .block-separator { @apply flex items-center gap-4 my-8; }
+    .block-separator::before,
+    .block-separator::after {
+      content: '';
+      @apply flex-1 h-px;
+      background: currentColor;
+      opacity: 0.4;
+    }
+    .block-separator-title {
+      @apply shrink-0;
+      font-size: 0.7em;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
   `],
 })
 export class PresenterComponent {
@@ -133,10 +154,24 @@ export class PresenterComponent {
   readonly overTime = signal(false);
 
   readonly scene = computed(() => this.scenes()[this.index()] ?? null);
-  readonly continuousScenes = computed(() => this.scenes().map(scene => ({
-    scene,
-    text: this.toPlainText(scene.script),
-  })));
+  readonly continuousScenes = computed(() => {
+    const blockByScene = new Map<string, SceneBlock>();
+    for (const block of this.store.blocks()) {
+      for (const id of block.sceneIds) blockByScene.set(id, block);
+    }
+    const shown = new Set<string>();
+    return this.scenes().map(scene => {
+      const block = blockByScene.get(scene.id) ?? null;
+      const showBlockHeader = !!block && !shown.has(block.id);
+      if (block) shown.add(block.id);
+      return {
+        scene,
+        text: this.toPlainText(scene.script),
+        block,
+        showBlockHeader,
+      };
+    });
+  });
 
   readonly plainScript = computed(() => {
     const s = this.scene();

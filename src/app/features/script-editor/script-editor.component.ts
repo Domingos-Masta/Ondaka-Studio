@@ -15,6 +15,7 @@ import { Placeholder, StarterKit } from '@domternal/core';
 import type { Editor } from '@domternal/core';
 
 import type { Scene } from '../../core/models/project.model';
+import type { SceneBlock } from '../../core/models/scene-block.model';
 import { ProjectStore } from '../../core/services/project/project.store';
 import { SelectionService } from '../../core/services/selection/selection.service';
 import { TimingService } from '../../core/services/timing/timing.service';
@@ -75,6 +76,11 @@ import { renderTemplate } from '../../core/models/ai/adapters/prompt-builder';
           @if (continuousView()) {
             <div #continuousViewport class="continuous-editor">
               @for (item of continuousScenes(); track item.id) {
+                @if (item.showBlockHeader && item.block) {
+                  <div class="block-separator" [style.color]="item.block.color">
+                    <span class="block-separator-title">{{ item.block.title }}</span>
+                  </div>
+                }
                 <article class="editor-page" [attr.data-scene-id]="item.id"
                          (click)="selection.select(item.id)">
                   <div class="editor-page-title">{{ item.title }}</div>
@@ -147,6 +153,16 @@ import { renderTemplate } from '../../core/models/ai/adapters/prompt-builder';
     .editor-page-title { @apply mb-5 text-xs font-semibold uppercase tracking-widest text-zinc-500; }
     .editor-page-content { @apply min-h-[55vh] outline-none; }
 
+    .block-separator { @apply mx-auto max-w-3xl flex items-center gap-3 my-6; }
+    .block-separator::before,
+    .block-separator::after {
+      content: '';
+      @apply flex-1 h-px;
+      background: currentColor;
+      opacity: 0.35;
+    }
+    .block-separator-title { @apply text-[11px] font-semibold uppercase tracking-widest shrink-0; }
+
     /* Editor host fills its flex parent completely. */
     :host { display: block; min-height: 0; }
     :host dm-editor { display: block; width: 100%; height: 100%; min-height: 0; }
@@ -171,11 +187,25 @@ export class ScriptEditorComponent {
   ];
 
   readonly scene = this.selection.selected;
-  readonly continuousScenes = computed(() => this.store.scenes().map(scene => ({
-    id: scene.id,
-    title: scene.title,
-    script: scene.script,
-  })));
+  readonly continuousScenes = computed(() => {
+    const blockByScene = new Map<string, SceneBlock>();
+    for (const block of this.store.blocks()) {
+      for (const id of block.sceneIds) blockByScene.set(id, block);
+    }
+    const shown = new Set<string>();
+    return this.store.scenes().map(scene => {
+      const block = blockByScene.get(scene.id) ?? null;
+      const showBlockHeader = !!block && !shown.has(block.id);
+      if (block) shown.add(block.id);
+      return {
+        id: scene.id,
+        title: scene.title,
+        script: scene.script,
+        block,
+        showBlockHeader,
+      };
+    });
+  });
 
   private readonly syncEditorScene = effect(() => {
     const scene = this.scene();

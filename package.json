@@ -29,7 +29,8 @@
     "electron:serve": "concurrently \"ng serve\" \"wait-on http://localhost:4200 && electron app/dist/main.js\"",
     "electron:build": "ng build --configuration production && tsc -p app/tsconfig.json && electron-builder",
     "electron:build-win": "ng build --configuration production && tsc -p app/tsconfig.json && electron-builder --win",
-    "electron:build-lnx": "ng build --configuration production && tsc -p app/tsconfig.json && electron-builder --linux"
+    "electron:build-lnx": "ng build --configuration production && tsc -p app/tsconfig.json && electron-builder --linux",
+    "electron:all": "ng build --configuration production && tsc -p app/tsconfig.json && electron-builder -mwl"
   },
   "build": {
     "appId": "com.scriptwriter.pro",
