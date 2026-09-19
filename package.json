@@ -1,6 +1,6 @@
 {
   "name": "scriptwriter-pro",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "main": "app/dist/main.js",
   "description": "A cross-platform desktop application for scriptwriting, built with love for content creators.",
   "homepage": "https://github.com/belnadris/angular-electron",

@@ -11,8 +11,25 @@ import {
   DomternalToolbarComponent,
   DomternalBubbleMenuComponent,
 } from '@domternal/angular';
-import { Placeholder, StarterKit } from '@domternal/core';
+import {
+  ClearFormatting,
+  FontFamily,
+  FontSize,
+  Highlight,
+  InvisibleChars,
+  LineHeight,
+  Placeholder,
+  StarterKit,
+  Subscript,
+  Superscript,
+  TextAlign,
+  TextColor,
+  TextStyle,
+} from '@domternal/core';
 import type { Editor } from '@domternal/core';
+import { Table, TableCell, TableHeader, TableRow } from './extensions/table';
+import { Image } from './extensions/image';
+import { Details, DetailsContent, DetailsSummary } from './extensions/details';
 
 import type { Scene } from '../../core/models/project.model';
 import type { SceneBlock } from '../../core/models/scene-block.model';
@@ -184,6 +201,25 @@ export class ScriptEditorComponent {
   readonly extensions = [
     StarterKit,
     Placeholder.configure({ placeholder: 'Write your script here…' }),
+    Highlight,
+    Subscript,
+    Superscript,
+    TextAlign,
+    TextColor,
+    TextStyle,
+    FontSize,
+    FontFamily,
+    LineHeight,
+    InvisibleChars,
+    ClearFormatting,
+    Table,
+    TableRow,
+    TableHeader,
+    TableCell,
+    Details,
+    DetailsSummary,
+    DetailsContent,
+    Image,
   ];
 
   readonly scene = this.selection.selected;

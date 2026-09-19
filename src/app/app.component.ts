@@ -35,14 +35,16 @@ import { SettingsService } from './core/services/settings/settings.service';
            [style.grid-template-columns]="layout.gridTemplate()">
 
         <app-scene-list
-          class="min-h-0 min-w-0 overflow-hidden border-r border-surface-3"
-          [class.hidden]="!layout.leftOpen()" />
+          class="min-h-0 min-w-0 overflow-hidden"
+          [class.border-r]="layout.leftOpen()"
+          [class.border-surface-3]="layout.leftOpen()" />
 
         <app-script-editor class="min-h-0 min-w-0 overflow-hidden" />
 
         <app-timing-panel
-          class="min-h-0 min-w-0 overflow-hidden border-l border-surface-3"
-          [class.hidden]="!layout.rightOpen()" />
+          class="min-h-0 min-w-0 overflow-hidden"
+          [class.border-l]="layout.rightOpen()"
+          [class.border-surface-3]="layout.rightOpen()" />
       </div>
 
       <app-timeline-strip class="border-t border-surface-3" />

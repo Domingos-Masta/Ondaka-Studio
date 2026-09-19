@@ -4,6 +4,7 @@ import {
   computed, effect, inject, output, signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { ProjectStore } from '../../core/services/project/project.store';
 import type { SceneBlock } from '../../core/models/scene-block.model';
 
@@ -55,14 +56,14 @@ import type { SceneBlock } from '../../core/models/scene-block.model';
               }
               <article class="scene-page">
                 <div class="scene-page-label">{{ item.scene.title }}</div>
-                <div class="presenter-text">{{ item.text }}</div>
+                <div class="presenter-text" [innerHTML]="item.html"></div>
               </article>
             }
           </div>
         } @else {
           <div class="mx-auto max-w-prose w-full px-8 py-[40vh]"
                [style.font-size.px]="fontSize()">
-            <div class="presenter-text">{{ plainScript() }}</div>
+            <div class="presenter-text" [innerHTML]="scriptHtml()"></div>
           </div>
         }
 
@@ -98,12 +99,38 @@ import type { SceneBlock } from '../../core/models/scene-block.model';
 
     /* The actual fix for the hidden-on-the-right bug. */
     .presenter-text {
-      white-space: pre-wrap;      /* honour script line breaks */
       overflow-wrap: break-word;  /* break long tokens */
       word-break: normal;         /* keep prose readable */
       line-height: 1.6;
       max-width: 100%;
-      tab-size: 2;
+    }
+    /* ::ng-deep pierces view encapsulation so these rules match the
+       dynamically-injected [innerHTML] content (tables, images, etc.). */
+    .presenter-text ::ng-deep .tableWrapper { overflow-x: auto; margin: 1em 0; }
+    .presenter-text ::ng-deep table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 0.85em;
+    }
+    .presenter-text ::ng-deep th,
+    .presenter-text ::ng-deep td {
+      border: 1px solid rgb(255 255 255 / 0.25);
+      padding: 0.4em 0.6em;
+      text-align: left;
+      vertical-align: top;
+    }
+    .presenter-text ::ng-deep th { background: rgb(255 255 255 / 0.08); font-weight: 600; }
+    .presenter-text ::ng-deep img { max-width: 100%; height: auto; }
+    .presenter-text ::ng-deep blockquote {
+      border-left: 3px solid rgb(255 255 255 / 0.25);
+      padding-left: 1em;
+      margin: 0.5em 0;
+    }
+    .presenter-text ::ng-deep pre {
+      white-space: pre-wrap;
+      background: rgb(255 255 255 / 0.06);
+      padding: 0.75em;
+      border-radius: 0.375rem;
     }
     .continuous-document { min-height: 100%; }
     .scene-page {
@@ -142,6 +169,7 @@ export class PresenterComponent {
   readonly toClose = output<void>();
 
   private store = inject(ProjectStore);
+  private sanitizer = inject(DomSanitizer);
 
   readonly scenes   = this.store.scenes;
   readonly index    = signal(0);
@@ -153,7 +181,7 @@ export class PresenterComponent {
   readonly elapsed  = signal(0);
   readonly overTime = signal(false);
 
-  readonly scene = computed(() => this.scenes()[this.index()] ?? null);
+  readonly scene = computed(() => this.scenes().at(this.index()) ?? null);
   readonly continuousScenes = computed(() => {
     const blockByScene = new Map<string, SceneBlock>();
     for (const block of this.store.blocks()) {
@@ -166,17 +194,17 @@ export class PresenterComponent {
       if (block) shown.add(block.id);
       return {
         scene,
-        text: this.toPlainText(scene.script),
+        html: this.sanitizer.bypassSecurityTrustHtml(scene.script),
         block,
         showBlockHeader,
       };
     });
   });
 
-  readonly plainScript = computed(() => {
+  readonly scriptHtml = computed<SafeHtml>(() => {
     const s = this.scene();
-    if (!s) return '— End of video —';
-    return this.toPlainText(s.script);
+    if (!s) return this.sanitizer.bypassSecurityTrustHtml('— End of video —');
+    return this.sanitizer.bypassSecurityTrustHtml(s.script);
   });
 
   setContinuousMode(): void {
@@ -185,18 +213,6 @@ export class PresenterComponent {
     if (this.raf) cancelAnimationFrame(this.raf);
     if (this.ticker) clearInterval(this.ticker);
     this.viewportRef?.nativeElement.scrollTo({ top: 0 });
-  }
-
-  private toPlainText(html: string): string {
-    return html
-      .replace(/<br\s*\/?>/gi, '\n')
-      .replace(/<\/p>|<\/div>|<\/li>/gi, '\n')
-      .replace(/<[^>]+>/g, '')
-      .replace(/&nbsp;/g, ' ')
-      .replace(/&amp;/g, '&')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .trim();
   }
 
   private raf?: number;
