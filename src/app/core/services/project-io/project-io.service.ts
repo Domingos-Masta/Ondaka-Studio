@@ -4,7 +4,7 @@ import { ToastService } from '../toast/toast.service';
 import { ProjectStore } from '../project/project.store';
 import { VideoProject } from '../../models/project.model';
 
-interface SwprojEnvelope {
+interface ProjectEnvelope {
     format: 'swproj';
     version: number;
     savedAt: string;
@@ -89,9 +89,9 @@ export class ProjectIoService {
 
     /** Load a .swproj envelope (already parsed by the main process). */
     private loadEnvelope(envelope: unknown, filePath: string): boolean {
-        const env = envelope as SwprojEnvelope;
+        const env = envelope as ProjectEnvelope;
         if (env?.format !== 'swproj') {
-            this.toast.error('Not a ScriptWriter project file');
+            this.toast.error('Not an Ondaka Studio project file');
             return false;
         }
         // Basic shape validation before loading
@@ -121,7 +121,7 @@ export class ProjectIoService {
         this.isDirty.set(false);
     }
 
-    private envelope(): SwprojEnvelope {
+    private envelope(): ProjectEnvelope {
         return {
             format: 'swproj',
             version: 1,

@@ -9,7 +9,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "angular-electron": {
+    "ondaka-studio": {
       "root": "",
       "sourceRoot": "src",
       "projectType": "application",
@@ -87,21 +87,21 @@
         "serve": {
           "builder": "@angular/build:dev-server",
           "options": {
-            "buildTarget": "angular-electron:build"
+            "buildTarget": "ondaka-studio:build"
           },
           "configurations": {
             "dev": {
-              "buildTarget": "angular-electron:build:dev"
+              "buildTarget": "ondaka-studio:build:dev"
             },
             "production": {
-              "buildTarget": "angular-electron:build:production"
+              "buildTarget": "ondaka-studio:build:production"
             }
           }
         },
         "extract-i18n": {
           "builder": "@angular/build:extract-i18n",
           "options": {
-            "buildTarget": "angular-electron:build"
+            "buildTarget": "ondaka-studio:build"
           }
         },
         "test": {
@@ -112,7 +112,7 @@
             "browsers": [
               "chromium"
             ],
-            "buildTarget": "angular-electron:build:testing",
+            "buildTarget": "ondaka-studio:build:testing",
             "coverage": true,
             "coverageReporters": [
               "html",
@@ -140,7 +140,7 @@
         }
       }
     },
-    "angular-electron-e2e": {
+    "ondaka-studio-e2e": {
       "root": "e2e",
       "projectType": "application",
       "architect": {

@@ -1,4 +1,4 @@
-# ScriptWriter Pro
+# Ondaka Studio
 
 Pre-production scripting for YouTube creators.
 
@@ -9,13 +9,13 @@ Pre-production scripting for YouTube creators.
 
 ## What it is
 
-ScriptWriter Pro is a desktop application for planning, scripting, timing, and rehearsing YouTube videos before editing begins. It is built for creators working in a structured pre-production workflow, from scene planning through timed script delivery and export.
+Ondaka Studio is a desktop application for planning, scripting, timing, and rehearsing YouTube videos before editing begins. It is built for creators working in a structured pre-production workflow, from scene planning through timed script delivery and export.
 
 The app keeps the process centered on the script: outline the video, write scenes, set a target pace, rehearse with timing cues, and export a production-ready plan for the edit.
 
 ## What it is not
 
-ScriptWriter Pro is not a video editor, not a DAW, and not a media management tool. It does not handle color grading, audio mixing, rendering, or NLE-style editing workflows. Final editing is expected to happen in DaVinci Resolve, Final Cut Pro, or a similar application.
+Ondaka Studio is not a video editor, not a DAW, and not a media management tool. It does not handle color grading, audio mixing, rendering, or NLE-style editing workflows. Final editing is expected to happen in DaVinci Resolve, Final Cut Pro, or a similar application.
 
 ## Screenshots
 
@@ -89,7 +89,7 @@ AI features are optional and require the user to provide their own provider key.
 
 ```bash
 git clone <repository-url>
-cd scriptwriter-pro
+cd ondaka-studio
 npm install
 npm start
 ```
@@ -114,15 +114,15 @@ https://github.com/<owner>/<repo>/releases
 
 ### Project file format
 
-ScriptWriter Pro stores project data as JSON inside a `.swproj` file. The project format is local to the app and is designed to preserve the script, scene structure, timing information, and rehearsal metadata in a single file.
+Ondaka Studio stores project data as JSON inside a `.swproj` file. The project format is local to the app and is designed to preserve the script, scene structure, timing information, and rehearsal metadata in a single file.
 
 ### Where settings are stored
 
 Application settings and local project state are stored under Electron's `app.getPath('userData')` directory.
 
-- macOS: `~/Library/Application Support/scriptwriter-pro`
-- Windows: `%APPDATA%\scriptwriter-pro`
-- Linux: `~/.config/scriptwriter-pro`
+- macOS: `~/Library/Application Support/ondaka-studio`
+- Windows: `%APPDATA%\ondaka-studio`
+- Linux: `~/.config/ondaka-studio`
 
 If the app is configured to use `safeStorage`, API keys may be protected by the operating system keychain or equivalent secure storage. Otherwise, the app may rely on local encryption settings provided by Electron store configuration; this is still a local-device protection model and not a substitute for a remote secret store.
 

@@ -45,7 +45,7 @@ interface ToolbarButtonSpec {
  * (colgroup + column resize handles) in a `.dm-table-container` and adds a
  * floating toolbar with row/column operations.
  */
-export class ScriptWriterTableView extends TableView {
+export class OndakaTableView extends TableView {
   private readonly editorView: EditorView;
   private readonly container: HTMLDivElement;
   private readonly toolbar: HTMLDivElement;

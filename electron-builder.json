@@ -3,8 +3,8 @@
   "fileAssociations": [
     {
       "ext": "swproj",
-      "name": "ScriptWriter Pro Project",
-      "description": "ScriptWriter Pro project",
+      "name": "Ondaka Studio Project",
+      "description": "Ondaka Studio project",
       "role": "Editor"
     }
   ],
@@ -23,7 +23,7 @@
     }
   ],
   "win": {
-    "icon": "build/icons/swp-icon.png",
+    "icon": "build/icons/ondaka-icon.png",
     "target": [
       "portable"
     ]
@@ -32,13 +32,13 @@
     "splashImage": "dist/browser/assets/icons/electron.bmp"
   },
   "mac": {
-    "icon": "build/icons/swp-icon.icns",
+    "icon": "build/icons/ondaka-icon.icns",
     "target": [
       "dmg"
     ]
   },
   "linux": {
-    "icon": "build/icons/swp-icon.png",
+    "icon": "build/icons/ondaka-icon.png",
     "target": [
       "AppImage",
       {

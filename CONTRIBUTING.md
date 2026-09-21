@@ -2,7 +2,7 @@
 
 ## Welcome
 
-Contributions are welcome for bug fixes, documentation, tests, and small feature work. ScriptWriter Pro is a small, focused desktop app, so the most useful changes are the ones that align with the project’s existing workflow and keep the application easy to maintain.
+Contributions are welcome for bug fixes, documentation, tests, and small feature work. Ondaka Studio is a small, focused desktop app, so the most useful changes are the ones that align with the project’s existing workflow and keep the application easy to maintain.
 
 ## Code of Conduct
 

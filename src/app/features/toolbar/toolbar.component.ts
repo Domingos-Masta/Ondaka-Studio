@@ -18,7 +18,7 @@ import { SettingsDialogComponent } from '../../shared/components/settings-dialog
   imports: [FormsModule, SettingsDialogComponent, ImportDialogComponent, TitleToScriptDialogComponent],
   template: `
     <header class="h-12 flex items-center gap-3 px-4 bg-surface-1 border-b border-surface-3 select-none">
-      <img class="app-icon" src="assets/icons/swp-icon.svg" alt="ScriptWriter Pro" title="ScriptWriter Pro" />
+      <img class="app-icon" src="assets/icons/ondaka-icon.svg" alt="Ondaka Studio" title="Ondaka Studio" />
 
       <div class="w-px h-5 bg-surface-3"></div>
 

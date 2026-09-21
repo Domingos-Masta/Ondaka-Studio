@@ -7,7 +7,7 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const isDev = !app.isPackaged;
-const SWPROJ_FILTERS = [{ name: 'ScriptWriter Project', extensions: ['swproj'] }];
+const PROJECT_FILTERS = [{ name: 'Ondaka Studio Project', extensions: ['swproj'] }];
 
 let win: BrowserWindow | null = null;
 let aboutWin: BrowserWindow | null = null;
@@ -35,7 +35,7 @@ function pathFromArgv(argv: string[]): string | null {
   return null;
 }
 
-async function readAndSendSwproj(filePath: string): Promise<void> {
+async function readAndSendProject(filePath: string): Promise<void> {
   try {
     const raw = await fs.readFile(filePath, 'utf-8');
     const project = JSON.parse(raw);
@@ -46,10 +46,10 @@ async function readAndSendSwproj(filePath: string): Promise<void> {
   }
 }
 
-function openSwprojFile(filePath: string): void {
+function openProjectFile(filePath: string): void {
   if (!filePath || !filePath.toLowerCase().endsWith('.swproj')) return;
   if (win && !win.isDestroyed() && !win.webContents.isLoading()) {
-    void readAndSendSwproj(filePath);
+    void readAndSendProject(filePath);
   } else {
     pendingOpenPath = filePath;
   }
@@ -87,7 +87,7 @@ function createWindow() {
     if (pendingOpenPath) {
       const pending = pendingOpenPath;
       pendingOpenPath = null;
-      void readAndSendSwproj(pending);
+      void readAndSendProject(pending);
     }
   });
 }
@@ -104,7 +104,7 @@ function createAboutWindow() {
     resizable: false,
     minimizable: false,
     maximizable: false,
-    title: 'About ScriptWriter Pro',
+    title: 'About Ondaka Studio',
     parent: win ?? undefined,
     modal: true,
     webPreferences: { contextIsolation: true, nodeIntegration: false },
@@ -119,7 +119,7 @@ function createAboutWindow() {
       button { margin-top: 24px; border: 0; border-radius: 6px; padding: 8px 24px; background: #f59e0b; color: #18181b; font-weight: 600; cursor: pointer; } button:hover { background: #fbbf24; }
     </style></head><body>
       <div class="mark"><svg viewBox="0 0 512 512" width="76" height="76" fill="none"><path d="M168 168l112 88-112 88" stroke="#f8fafc" stroke-width="36" stroke-linecap="round" stroke-linejoin="round"/><path d="M264 344h96" stroke="#f59e0b" stroke-width="36" stroke-linecap="round"/></svg></div>
-      <h1>ScriptWriter Pro</h1>
+      <h1>Ondaka Studio</h1>
       <p>A focused workspace for planning, writing, adapting, and presenting video scripts.</p>
       <p>Built for clear scene structure, timing, AI-assisted revision, and distraction-free rehearsal.</p>
       <p class="meta">Created by Domingos Fernando<br>Version ${app.getVersion()}</p>
@@ -205,14 +205,14 @@ function installApplicationMenu() {
 // macOS: file opened via Finder / "Open with" (fires before or after ready).
 app.on('open-file', (event, filePath) => {
   event.preventDefault();
-  openSwprojFile(filePath);
+  openProjectFile(filePath);
 });
 
 // Windows/Linux: a second launch (e.g. double-clicking a .swproj while the app
 // is already open) is forwarded here.
 app.on('second-instance', (_event, argv) => {
   const filePath = pathFromArgv(argv);
-  if (filePath) openSwprojFile(filePath);
+  if (filePath) openProjectFile(filePath);
   if (win) {
     if (win.isMinimized()) win.restore();
     win.focus();
@@ -234,7 +234,7 @@ app.whenReady().then(async () => {
 
   // Windows/Linux: launched with a .swproj path while the app was closed.
   const argvPath = pathFromArgv(process.argv);
-  if (argvPath) openSwprojFile(argvPath);
+  if (argvPath) openProjectFile(argvPath);
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
@@ -334,7 +334,7 @@ ipcMain.handle('dialog:open-file', async (_e, filters?: { name: string; extensio
 ipcMain.handle('project:save-as', async (_e, payload: { envelope: unknown; suggestedName: string }) => {
   const res = await dialog.showSaveDialog(win!, {
     defaultPath: payload.suggestedName,
-    filters: SWPROJ_FILTERS,
+    filters: PROJECT_FILTERS,
   });
   if (res.canceled || !res.filePath) return null;
   await fs.writeFile(res.filePath, JSON.stringify(payload.envelope, null, 2), 'utf-8');
@@ -352,7 +352,7 @@ ipcMain.handle('project:save-to-path', async (_e, payload: { filePath: string; e
 ipcMain.handle('project:open-file', async () => {
   const res = await dialog.showOpenDialog(win!, {
     properties: ['openFile'],
-    filters: SWPROJ_FILTERS,
+    filters: PROJECT_FILTERS,
   });
   if (res.canceled || !res.filePaths[0]) return null;
   const filePath = res.filePaths[0];

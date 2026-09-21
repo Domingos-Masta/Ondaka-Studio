@@ -1,9 +1,9 @@
 {
-  "name": "scriptwriter-pro",
+  "name": "ondaka-studio",
   "version": "1.0.6",
   "main": "app/dist/main.js",
   "description": "A cross-platform desktop application for scriptwriting, built with love for content creators.",
-  "homepage": "https://github.com/belnadris/angular-electron",
+  "homepage": "https://github.com/Domingos-Masta/Ondaka-Studio",
   "author": {
     "name": "Domingos Fernando",
     "email": "domingos.m.fernando@gmail.com"
@@ -33,8 +33,8 @@
     "electron:all": "ng build --configuration production && tsc -p app/tsconfig.json && electron-builder -mwl"
   },
   "build": {
-    "appId": "com.scriptwriter.pro",
-    "productName": "ScriptWriter Pro",
+    "appId": "com.ondaka.studio",
+    "productName": "Ondaka Studio",
     "files": [
       "dist/**/*",
       "app/dist/**/*",
@@ -51,7 +51,7 @@
       }
     ],
     "mac": {
-      "icon": "build/icons/swp-icon.icns",
+      "icon": "build/icons/ondaka-icon.icns",
       "category": "public.app-category.video",
       "target": [
         "dmg",
@@ -59,14 +59,14 @@
       ]
     },
     "win": {
-      "icon": "build/icons/swp-icon.png",
+      "icon": "build/icons/ondaka-icon.png",
       "target": [
         "nsis",
         "portable"
       ]
     },
     "linux": {
-      "icon": "build/icons/swp-icon.png",
+      "icon": "build/icons/ondaka-icon.png",
       "target": [
         "AppImage",
         "deb"

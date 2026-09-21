@@ -6,7 +6,7 @@ interface Schema {
 }
 
 const store = new Store<Schema>({
-  name: 'scriptwriter-settings',
+  name: 'ondaka-settings',
   encryptionKey: 'swpro-settings-v1', // obfuscation; see note below
 });
 

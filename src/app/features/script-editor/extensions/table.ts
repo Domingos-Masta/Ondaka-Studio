@@ -19,7 +19,7 @@ import {
   toggleHeaderColumn,
   toggleHeaderRow,
 } from '@domternal/pm/tables';
-import { ScriptWriterTableView } from './table-view';
+import { OndakaTableView } from './table-view';
 
 export interface InsertTableOptions {
   rows?: number;
@@ -140,7 +140,7 @@ export const Table = Node.create({
 
   addProseMirrorPlugins() {
     return [
-      columnResizing({ View: ScriptWriterTableView, lastColumnResizable: true }),
+      columnResizing({ View: OndakaTableView, lastColumnResizable: true }),
       tableEditing(),
     ];
   },

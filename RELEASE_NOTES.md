@@ -1,4 +1,4 @@
-# ScriptWriter Pro 1.0.6
+# Ondaka Studio 1.0.6
 
 ## Overview
 
@@ -41,7 +41,7 @@ This release focuses on the editing and organizing experience: full-featured tab
 
 ## Notes
 
-- ScriptWriter Pro is intended for pre-production scripting and rehearsal, not final editing.
+- Ondaka Studio is intended for pre-production scripting and rehearsal, not final editing.
 - AI features are optional and require the user to provide their own provider configuration and key.
 - Project data is stored locally under the app’s user-data directory.
 
