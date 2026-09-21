@@ -1,58 +1,43 @@
-# ScriptWriter Pro 1.0.3
+# ScriptWriter Pro 1.0.6
 
 ## Overview
 
-This release focuses on the project’s core pre-production workflow: planning scenes, writing scripts, setting timing against a target WPM, rehearsing delivery, and exporting structured output for the edit.
-
-It also includes a more complete settings and AI configuration flow, clearer project persistence, and a set of fixes aimed at improving the stability of the editor, scene selection, and export preview tasks.
+This release focuses on the editing and organizing experience: full-featured tables and richer text in the script editor, in-place scene and block reordering, production notes for scenes and blocks, rich content in presenter mode, and opening `.swproj` projects directly from the operating system.
 
 ## Highlights
 
-### Planning and structure
+### Script editor
 
-- Scene-based project planning with block organization
-- Structured video flow from hook to intro, body, and CTA
-- Scene reordering and grouping for pacing review
+- Insert tables (preset sizes or custom) and edit them in place with a floating toolbar: add/remove rows and columns, merge/split cells, and delete the table.
+- Drag column edges to resize columns; Tab/Shift-Tab navigate cells.
+- Rich text toolbar additions: highlight, subscript, superscript, text alignment, text color, background color, font family, font size, line height, invisible characters, and clear formatting.
+- Inline images and collapsible "details" blocks.
 
-### Scripting and timing
+### Organizing scenes
 
-- In-app script writing with scene metadata
-- Target pacing controls based on words per minute
-- Fit-to-time and time-to-script adjustments
-- Timed scene plan view for export and rehearsal
+- Reorder blocks with up/down controls and reorder scenes inside a block.
+- Drag scenes between blocks, or out of a block to ungroup them.
+- Scene order stays consistent with the scene list after any reorder, keeping selection and navigation reliable.
 
-### Rehearsal and presenter workflow
+### Notes
 
-- Take management for script delivery
-- Recording support during rehearsal
-- Teleprompter support in sequence and timed modes
-- Presenter flow improvements for consistent rehearsal usage
+- Add notes to scenes and blocks from the right panel — ideal for camera movements, effects, and other production details.
 
-### Export and collaboration
+### Presenting
 
-- Timed scene plan export
-- YouTube chapter export support
-- CSV and PDF export options
-- Project save/save-as/open support with `.swproj` persistence
+- Presenter mode now renders rich content (tables, images, blockquotes, and code blocks) instead of plain text.
 
-### Optional AI assistance
+### Project files
 
-- OpenAI support
-- Gemini support
-- DeepSeek support
-- Anthropic support
-- Custom OpenAI-compatible endpoints
-- Title-to-script, selection rewrite, and import adaptation flows
+- `.swproj` projects can be opened from Finder/Explorer via double-click or "Open with", including while the app is already running.
 
 ## Fixed issues
 
-- Resolved blank-page behavior after build
-- Fixed scene panel selection issues
-- Corrected Present button behavior in rehearsal flow
-- Fixed chapter preview generation
-- Fixed Save, Save As, and Open flows
-- Improved `.swproj` compatibility and format handling
-- Corrected editor layout and panel alignment issues
+- Editor disappearing when side panels were collapsed.
+- Frozen drag ghost element and inconsistent scene selection after drag and drop.
+- Table row/column operations crashing on invalid selections.
+- Tables missing from Continuous view and presenter mode.
+- Column resizing computing zero-width tables.
 
 ## Notes
 
@@ -64,15 +49,14 @@ It also includes a more complete settings and AI configuration flow, clearer pro
 
 - Angular 22
 - Electron 44
-- Node.js engine range supported by the project configuration
 - macOS, Windows, and Linux build targets
 
 ## Upgrade guidance
 
-If you are updating from an earlier build, open existing project files in the app and confirm the timing and export settings before final delivery work.
+If you are updating from an earlier build, open existing project files and confirm the timing and export settings before final delivery work.
 
 ## Known limitations
 
-- This release continues to target early-stage pre-production workflows rather than a full NLE-style production tool.
+- The `.swproj` file association is registered when the app is installed from a packaged build; it is not available when running from the development server.
 - AI integrations depend on user-managed provider credentials and endpoint configuration.
 - Export and chapter tools are intended to support the edit workflow, not replace the edit environment itself.

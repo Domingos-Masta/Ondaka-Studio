@@ -6,6 +6,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [Unreleased]
 
+## [1.0.6] - 2026-09-21
+
+### Added
+
+- Tables in the script editor with in-page row/column editing and drag-to-resize columns.
+- Inline images and collapsible details blocks.
+- Rich text toolbar options: highlight, subscript/superscript, text alignment, colors, font family/size, line height, invisible characters, and clear formatting.
+- Scene and block notes in the right panel (camera movements, effects, details).
+- `.swproj` file association so projects can be opened from the OS.
+
+### Changed
+
+- Presenter mode now renders rich content (tables, images, blockquotes, code blocks).
+- Scene list drag & drop: reorder blocks and scenes, and move scenes between blocks.
+
+### Fixed
+
+- Editor disappearing when side panels were collapsed.
+- Frozen drag ghost element and inconsistent scene selection after dragging scenes.
+- Table row/column operations crashing on invalid selections.
+- Tables missing from Continuous view and presenter mode.
+
+## [1.0.3]
+
 ### Added
 
 - Scene blocks for structured video planning and grouping.
