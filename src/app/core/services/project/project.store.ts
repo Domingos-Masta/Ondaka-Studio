@@ -100,6 +100,10 @@ export class ProjectStore {
         script: toEditorHtml(scene.script),
         notes: String(scene.notes ?? ''),
       })),
+      blocks: (project.blocks ?? []).map(block => ({
+        ...block,
+        notes: String(block.notes ?? ''),
+      })),
     });
   }
 
@@ -234,6 +238,7 @@ export class ProjectStore {
       color: BLOCK_PALETTE[cleanedBlocks.length % BLOCK_PALETTE.length],
       sceneIds: ids,
       collapsed: false,
+      notes: '',
     };
     this.updateProject(p => ({ ...p, blocks: [...cleanedBlocks, block] }));
     return block;
@@ -321,34 +326,95 @@ export class ProjectStore {
   }
 
   /**
-   * Reorder an ungrouped scene within the ungrouped list. Blocked scenes keep
-   * their positions; only the relative order of ungrouped scenes changes. This
-   * keeps drag-and-drop in the scene list consistent with what is rendered
-   * (blocks first, then ungrouped scenes).
+   * Reorder blocks by moving the block with `blockId` to `toIndex`.
+   * Scene order is then re-normalised so the flat scenes array always matches
+   * the visual order (blocks first, then ungrouped scenes).
    */
+  moveBlock(blockId: string, toIndex: number): void {
+    this.updateProject(p => {
+      const blocks = [...p.blocks];
+      const from = blocks.findIndex(b => b.id === blockId);
+      if (from < 0) return p;
+      const [moved] = blocks.splice(from, 1);
+      const to = Math.max(0, Math.min(toIndex, blocks.length));
+      blocks.splice(to, 0, moved);
+      return this.withNormalizedSceneOrder({ ...p, blocks });
+    });
+  }
+
+  /**
+   * Move a scene into a block (or ungroup it when `targetBlockId` is null),
+   * placing it at `toIndex` within that container. Also used to reorder scenes
+   * inside a block or inside the ungrouped list.
+   */
+  moveScene(sceneId: string, targetBlockId: string | null, toIndex: number): void {
+    this.updateProject(p => {
+      if (!p.scenes.some(s => s.id === sceneId)) return p;
+
+      // Remove the scene from every block, then insert it into the target block.
+      let blocks = p.blocks.map(b => ({
+        ...b,
+        sceneIds: b.sceneIds.filter(id => id !== sceneId),
+      }));
+      if (targetBlockId) {
+        blocks = blocks.map(b => {
+          if (b.id !== targetBlockId) return b;
+          const ids = [...b.sceneIds];
+          ids.splice(Math.max(0, Math.min(toIndex, ids.length)), 0, sceneId);
+          return { ...b, sceneIds: ids };
+        });
+      }
+      blocks = blocks.filter(b => b.sceneIds.length > 0);
+
+      // Ungrouped scenes keep their relative order via `order`; if this scene
+      // is being ungrouped, splice it into the ungrouped list at `toIndex`.
+      const grouped = new Set(blocks.flatMap(b => b.sceneIds));
+      const ungroupedIds = p.scenes
+        .filter(s => !grouped.has(s.id))
+        .sort((a, b) => a.order - b.order)
+        .map(s => s.id);
+
+      if (!targetBlockId) {
+        const existing = ungroupedIds.indexOf(sceneId);
+        if (existing >= 0) ungroupedIds.splice(existing, 1);
+        ungroupedIds.splice(Math.max(0, Math.min(toIndex, ungroupedIds.length)), 0, sceneId);
+      }
+
+      const relOrder = new Map(ungroupedIds.map((id, i) => [id, i]));
+      const relSet = new Set(relOrder.keys());
+      const scenes = p.scenes.map(s =>
+        relSet.has(s.id) ? { ...s, order: relOrder.get(s.id)! } : s
+      );
+
+      return this.withNormalizedSceneOrder({ ...p, blocks, scenes });
+    });
+  }
+
+  /** Reorder an ungrouped scene within the ungrouped list (drag-and-drop). */
   reorderUngroupedScene(sceneId: string, targetIndex: number): void {
-    const sorted = this.scenes();
-    const groupedIds = new Set(this.blocks().flatMap(b => b.sceneIds));
-    const ungrouped = sorted.filter(s => !groupedIds.has(s.id));
+    this.moveScene(sceneId, null, targetIndex);
+  }
 
-    const from = ungrouped.findIndex(s => s.id === sceneId);
-    if (from < 0) return;
-
-    const [moved] = ungrouped.splice(from, 1);
-    const to = Math.max(0, Math.min(targetIndex, ungrouped.length));
-    ungrouped.splice(to, 0, moved);
-
-    const ungroupedIds = new Set(ungrouped.map(s => s.id));
-    let ui = 0;
-    const next = sorted
-      .map(s => (ungroupedIds.has(s.id) ? ungrouped[ui++] : s))
-      .map((s, i) => ({ ...s, order: i }));
-
-    this._project.update(p => ({
-      ...p,
-      scenes: next,
-      updatedAt: new Date().toISOString(),
-    }));
+  /**
+   * Recompute every scene's `order` so the flat scenes array matches the visual
+   * order rendered by the scene list: blocks in order (their scenes in order),
+   * then ungrouped scenes. Keeps selection, keyboard navigation, the timeline
+   * strip and the presenter aligned with what the user actually sees.
+   */
+  private withNormalizedSceneOrder(p: VideoProject): VideoProject {
+    const byId = new Map(p.scenes.map(s => [s.id, s]));
+    const grouped = new Set(p.blocks.flatMap(b => b.sceneIds));
+    const ordered: Scene[] = [];
+    for (const block of p.blocks) {
+      for (const id of block.sceneIds) {
+        const scene = byId.get(id);
+        if (scene) ordered.push(scene);
+      }
+    }
+    ordered.push(
+      ...p.scenes.filter(s => !grouped.has(s.id)).sort((a, b) => a.order - b.order),
+    );
+    return { ...p, scenes: ordered.map((s, i) => ({ ...s, order: i })) };
   }
 
   /** Remove the given scenes from whatever block they belong to, dropping empty blocks. */

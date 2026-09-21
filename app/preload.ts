@@ -54,6 +54,18 @@ contextBridge.exposeInMainWorld('api', {
     ipcRenderer.on('menu:action', listener);
     return () => ipcRenderer.removeListener('menu:action', listener);
   },
+
+  onOpenExternalFile: (callback: (payload: { filePath: string; project: unknown }) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, payload: { filePath: string; project: unknown }) => callback(payload);
+    ipcRenderer.on('project:opened-externally', listener);
+    return () => ipcRenderer.removeListener('project:opened-externally', listener);
+  },
+
+  onOpenFileError: (callback: (payload: { filePath: string; message: string }) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, payload: { filePath: string; message: string }) => callback(payload);
+    ipcRenderer.on('project:open-error', listener);
+    return () => ipcRenderer.removeListener('project:open-error', listener);
+  },
 });
 
 declare global {
@@ -77,6 +89,8 @@ declare global {
         patch: (partial: unknown) => Promise<void>;
       };
       onMenuAction: (callback: (action: MenuAction) => void) => () => void;
+      onOpenExternalFile: (callback: (payload: { filePath: string; project: unknown }) => void) => () => void;
+      onOpenFileError: (callback: (payload: { filePath: string; message: string }) => void) => () => void;
 
     };
   }

@@ -35,6 +35,16 @@ export class ProjectIoService {
             this.isDirty.set(now !== lastSaved);
             (this as any)._lastSaved = lastSaved;
         }, 800);
+
+        // A .swproj opened from the OS (double-click / "Open with") is delivered
+        // here by the Electron main process.
+        const api = (window as any).api;
+        api?.onOpenExternalFile?.((payload: { filePath: string; project: unknown }) => {
+            this.loadEnvelope(payload.project, payload.filePath);
+        });
+        api?.onOpenFileError?.((payload: { filePath: string; message: string }) => {
+            this.toast.error(`Open failed: ${payload.message}`);
+        });
     }
 
     async save(): Promise<boolean> {
@@ -70,34 +80,38 @@ export class ProjectIoService {
         try {
             const result = await (window as any).api.openProjectFile();
             if (!result) return false;
-            const envelope = result.project as SwprojEnvelope;
-            if (envelope?.format !== 'swproj') {
-                this.toast.error('Not a ScriptWriter project file');
-                return false;
-            }
-            // Basic shape validation before loading
-            if (!envelope.project?.scenes || !Array.isArray(envelope.project.scenes)) {
-                this.toast.error('Project file is malformed');
-                return false;
-            }
-            // In loadProject, after parsing the envelope:
-            const project: VideoProject = {
-                ...envelope.project,
-                blocks: envelope.project.blocks ?? [],
-                scenes: (envelope.project.scenes ?? []).map((s) => ({
-                    ...s,
-                    aiRevisions: s.aiRevisions ?? [],
-                })),
-            };
-            this.store.load(project);
-            this.filePath.set(String(result.filePath));
-            this.isDirty.set(false);
-            this.toast.success(`Opened — ${this.displayName()}`);
-            return true;
+            return this.loadEnvelope(result.project, String(result.filePath));
         } catch (err) {
             this.toast.error(`Open failed: ${(err as Error).message}`);
             return false;
         }
+    }
+
+    /** Load a .swproj envelope (already parsed by the main process). */
+    private loadEnvelope(envelope: unknown, filePath: string): boolean {
+        const env = envelope as SwprojEnvelope;
+        if (env?.format !== 'swproj') {
+            this.toast.error('Not a ScriptWriter project file');
+            return false;
+        }
+        // Basic shape validation before loading
+        if (!env.project?.scenes || !Array.isArray(env.project.scenes)) {
+            this.toast.error('Project file is malformed');
+            return false;
+        }
+        const project: VideoProject = {
+            ...env.project,
+            blocks: env.project.blocks ?? [],
+            scenes: (env.project.scenes ?? []).map((s) => ({
+                ...s,
+                aiRevisions: s.aiRevisions ?? [],
+            })),
+        };
+        this.store.load(project);
+        this.filePath.set(filePath);
+        this.isDirty.set(false);
+        this.toast.success(`Opened — ${this.displayName()}`);
+        return true;
     }
 
     newProject() {

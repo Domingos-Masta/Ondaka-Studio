@@ -4,6 +4,7 @@ export interface SceneBlock {
   color: string;
   sceneIds: string[];
   collapsed: boolean;
+  notes: string;
 }
 
 export const BLOCK_PALETTE = [

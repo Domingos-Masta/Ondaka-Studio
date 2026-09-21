@@ -1,5 +1,13 @@
 {
   "asar": true,
+  "fileAssociations": [
+    {
+      "ext": "swproj",
+      "name": "ScriptWriter Pro Project",
+      "description": "ScriptWriter Pro project",
+      "role": "Editor"
+    }
+  ],
   "directories": {
     "output": "release/"
   },

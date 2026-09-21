@@ -11,6 +11,14 @@ const SWPROJ_FILTERS = [{ name: 'ScriptWriter Project', extensions: ['swproj'] }
 
 let win: BrowserWindow | null = null;
 let aboutWin: BrowserWindow | null = null;
+let pendingOpenPath: string | null = null;
+
+// A single app instance — a double-clicked .swproj while the app is running is
+// forwarded to the existing instance via the `second-instance` event.
+const gotSingleInstanceLock = app.requestSingleInstanceLock();
+if (!gotSingleInstanceLock) {
+  app.quit();
+}
 
 function projectsDir() {
   return path.join(app.getPath('userData'), 'projects');
@@ -18,6 +26,33 @@ function projectsDir() {
 
 async function ensureDir(p: string) {
   await fs.mkdir(p, { recursive: true });
+}
+
+function pathFromArgv(argv: string[]): string | null {
+  for (const arg of argv.slice(1)) {
+    if (arg.toLowerCase().endsWith('.swproj')) return arg;
+  }
+  return null;
+}
+
+async function readAndSendSwproj(filePath: string): Promise<void> {
+  try {
+    const raw = await fs.readFile(filePath, 'utf-8');
+    const project = JSON.parse(raw);
+    win?.webContents.send('project:opened-externally', { filePath, project });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    win?.webContents.send('project:open-error', { filePath, message });
+  }
+}
+
+function openSwprojFile(filePath: string): void {
+  if (!filePath || !filePath.toLowerCase().endsWith('.swproj')) return;
+  if (win && !win.isDestroyed() && !win.webContents.isLoading()) {
+    void readAndSendSwproj(filePath);
+  } else {
+    pendingOpenPath = filePath;
+  }
 }
 
 function createWindow() {
@@ -45,6 +80,16 @@ function createWindow() {
     console.log('Loading:', indexPath);
     win.loadFile(indexPath);
   }
+
+  // Once the renderer is ready, flush any file that was queued while the
+  // window was still loading (e.g. a .swproj opened via the OS).
+  win.webContents.on('did-finish-load', () => {
+    if (pendingOpenPath) {
+      const pending = pendingOpenPath;
+      pendingOpenPath = null;
+      void readAndSendSwproj(pending);
+    }
+  });
 }
 
 function createAboutWindow() {
@@ -157,7 +202,26 @@ function installApplicationMenu() {
 }
 
 
+// macOS: file opened via Finder / "Open with" (fires before or after ready).
+app.on('open-file', (event, filePath) => {
+  event.preventDefault();
+  openSwprojFile(filePath);
+});
+
+// Windows/Linux: a second launch (e.g. double-clicking a .swproj while the app
+// is already open) is forwarded here.
+app.on('second-instance', (_event, argv) => {
+  const filePath = pathFromArgv(argv);
+  if (filePath) openSwprojFile(filePath);
+  if (win) {
+    if (win.isMinimized()) win.restore();
+    win.focus();
+  }
+});
+
 app.whenReady().then(async () => {
+  if (!gotSingleInstanceLock) return;
+
   await ensureDir(projectsDir());
 
   // macOS microphone permission
@@ -167,6 +231,10 @@ app.whenReady().then(async () => {
 
   installApplicationMenu();
   createWindow();
+
+  // Windows/Linux: launched with a .swproj path while the app was closed.
+  const argvPath = pathFromArgv(process.argv);
+  if (argvPath) openSwprojFile(argvPath);
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

@@ -55,13 +55,17 @@ import { SceneBlock } from '../../core/models/scene-block.model';
         </div>
       }
 
-      <div
-        cdkDropList
-        (cdkDropListDropped)="drop($event)"
-        class="flex-1 overflow-y-auto p-2 space-y-1.5">
+      <div cdkDropListGroup class="flex-1 min-h-0 overflow-y-auto p-2 space-y-1.5">
+
         @for (block of store.blocks(); track block.id) {
           <div class="mb-1 select-none" [style.border-left-color]="block.color" style="border-left: 3px solid">
-            <div class="flex items-center gap-2 bg-neutral-900 px-2 py-1 text-xs uppercase tracking-wide text-neutral-400">
+            <div class="flex items-center gap-1 bg-neutral-900 px-2 py-1 text-xs uppercase tracking-wide text-neutral-400">
+              <button class="block-move" title="Move block up"
+                      [disabled]="store.blocks()[0]?.id === block.id"
+                      (click)="moveBlock(block.id, -1)">↑</button>
+              <button class="block-move" title="Move block down"
+                      [disabled]="store.blocks()[store.blocks().length - 1]?.id === block.id"
+                      (click)="moveBlock(block.id, 1)">↓</button>
               <button (click)="store.updateBlock(block.id, { collapsed: !block.collapsed })">
                 {{ block.collapsed ? '▸' : '▾' }}
               </button>
@@ -77,83 +81,98 @@ import { SceneBlock } from '../../core/models/scene-block.model';
               <button class="text-red-400 hover:text-red-300"
                       (click)="store.removeBlock(block.id)">✕</button>
             </div>
+
             @if (!block.collapsed) {
-              @for (item of store.blockScenesWithTiming(block)(); track item.scene.id) {
-                <div
-                  class="scene-card"
-                  [class.selected]="item.scene.id === selection.selectedId()"
-                  [class.organizing]="organize.active()"
-                  (click)="onSceneClick(item.scene.id)">
+              <div cdkDropList
+                   (cdkDropListDropped)="onSceneDrop($event, block.id)"
+                   class="space-y-1.5 p-1">
+                @for (item of store.blockScenesWithTiming(block)(); track item.scene.id) {
+                  <div
+                    class="scene-card"
+                    cdkDrag
+                    [cdkDragData]="item.scene.id"
+                    (cdkDragEnded)="onDragEnded()"
+                    [class.selected]="item.scene.id === selection.selectedId()"
+                    [class.organizing]="organize.active()"
+                    (click)="onSceneClick(item.scene.id)">
 
-                  @if (organize.active()) {
-                    <span class="check" [class.checked]="organize.selectedSet().has(item.scene.id)"></span>
-                  }
+                    @if (organize.active()) {
+                      <span class="check" [class.checked]="organize.selectedSet().has(item.scene.id)"></span>
+                    }
 
-                  <div class="flex items-center gap-2 mb-1">
-                    <span class="w-2 h-2 rounded-full shrink-0"
-                          [style.background]="roleColor(item.scene.role)"></span>
-                    <span class="text-[10px] uppercase tracking-wider text-zinc-500">
-                      {{ roleLabel(item.scene.role) }}
-                    </span>
-                    <span class="ml-auto text-[10px] tabular-nums"
-                          [class.text-over]="item.timing.deltaSec > 3"
-                          [class.text-ok]="Math.abs(item.timing.deltaSec) <= 3">
-                      {{ format(item.timing.estimatedSec) }} / {{ format(item.scene.targetDurationSec) }}
-                    </span>
+                    <div class="flex items-center gap-2 mb-1">
+                      <span class="w-2 h-2 rounded-full shrink-0"
+                            [style.background]="roleColor(item.scene.role)"></span>
+                      <span class="text-[10px] uppercase tracking-wider text-zinc-500">
+                        {{ roleLabel(item.scene.role) }}
+                      </span>
+                      <span class="ml-auto text-[10px] tabular-nums"
+                            [class.text-over]="item.timing.deltaSec > 3"
+                            [class.text-ok]="Math.abs(item.timing.deltaSec) <= 3">
+                        {{ format(item.timing.estimatedSec) }} / {{ format(item.scene.targetDurationSec) }}
+                      </span>
+                    </div>
+
+                    <div class="text-sm font-medium truncate">{{ item.scene.title }}</div>
+                    <div class="text-xs text-zinc-500 truncate">
+                      {{ preview(item.scene.script) || 'Empty script' }}
+                    </div>
+
+                    @if (item.scene.lock !== 'none') {
+                      <div class="absolute top-2 right-2 text-[10px] text-accent">🔒</div>
+                    }
                   </div>
+                } @empty {
+                  <div class="text-xs text-zinc-600 text-center py-2">Drop scenes here.</div>
+                }
+              </div>
+            }
+          </div>
+        }
 
-                  <div class="text-sm font-medium truncate">{{ item.scene.title }}</div>
-                  <div class="text-xs text-zinc-500 truncate">
-                    {{ preview(item.scene.script) || 'Empty script' }}
-                  </div>
+        <div cdkDropList
+             (cdkDropListDropped)="onUngroupedDrop($event)"
+             class="space-y-1.5">
+          @for (item of store.ungroupedScenes(); track item.scene.id) {
+            <div
+              class="scene-card"
+              cdkDrag
+              [cdkDragData]="item.scene.id"
+              (cdkDragEnded)="onDragEnded()"
+              [class.selected]="item.scene.id === selection.selectedId()"
+              [class.organizing]="organize.active()"
+              (click)="onSceneClick(item.scene.id)">
 
-                  @if (item.scene.lock !== 'none') {
-                    <div class="absolute top-2 right-2 text-[10px] text-accent">🔒</div>
-                  }
-                </div>
-              } @empty {
-                <div class="text-xs text-zinc-600 text-center py-8">No scenes yet.</div>
+              @if (organize.active()) {
+                <span class="check" [class.checked]="organize.selectedSet().has(item.scene.id)"></span>
               }
-            }
-          </div>
-        }
-        @for (item of store.ungroupedScenes(); track item.scene.id) {
-           <div
-            cdkDrag
-            [cdkDragData]="item.scene.id"
-            [cdkDragDisabled]="organize.active()"
-            class="scene-card"
-            [class.selected]="item.scene.id === selection.selectedId()"
-            [class.organizing]="organize.active()"
-            (click)="onSceneClick(item.scene.id)">
 
-            @if (organize.active()) {
-              <span class="check" [class.checked]="organize.selectedSet().has(item.scene.id)"></span>
-            }
+              <div class="flex items-center gap-2 mb-1">
+                <span class="w-2 h-2 rounded-full shrink-0"
+                      [style.background]="roleColor(item.scene.role)"></span>
+                <span class="text-[10px] uppercase tracking-wider text-zinc-500">
+                  {{ roleLabel(item.scene.role) }}
+                </span>
+                <span class="ml-auto text-[10px] tabular-nums"
+                      [class.text-over]="item.timing.deltaSec > 3"
+                      [class.text-ok]="Math.abs(item.timing.deltaSec) <= 3">
+                  {{ format(item.timing.estimatedSec) }} / {{ format(item.scene.targetDurationSec) }}
+                </span>
+              </div>
 
-            <div class="flex items-center gap-2 mb-1">
-              <span class="w-2 h-2 rounded-full shrink-0"
-                    [style.background]="roleColor(item.scene.role)"></span>
-              <span class="text-[10px] uppercase tracking-wider text-zinc-500">
-                {{ roleLabel(item.scene.role) }}
-              </span>
-              <span class="ml-auto text-[10px] tabular-nums"
-                    [class.text-over]="item.timing.deltaSec > 3"
-                    [class.text-ok]="Math.abs(item.timing.deltaSec) <= 3">
-                {{ format(item.timing.estimatedSec) }} / {{ format(item.scene.targetDurationSec) }}
-              </span>
+              <div class="text-sm font-medium truncate">{{ item.scene.title }}</div>
+              <div class="text-xs text-zinc-500 truncate">
+                {{ preview(item.scene.script) || 'Empty script' }}
+              </div>
+
+              @if (item.scene.lock !== 'none') {
+                <div class="absolute top-2 right-2 text-[10px] text-accent">🔒</div>
+              }
             </div>
-
-            <div class="text-sm font-medium truncate">{{ item.scene.title }}</div>
-            <div class="text-xs text-zinc-500 truncate">
-              {{ preview(item.scene.script) || 'Empty script' }}
-            </div>
-
-            @if (item.scene.lock !== 'none') {
-              <div class="absolute top-2 right-2 text-[10px] text-accent">🔒</div>
-            }
-          </div>
-        }
+          } @empty {
+            <div class="text-xs text-zinc-600 text-center py-2">Drop scenes here.</div>
+          }
+        </div>
       </div>
 
       <div class="p-2 border-t border-surface-3 flex gap-1">
@@ -178,6 +197,9 @@ import { SceneBlock } from '../../core/models/scene-block.model';
 
     .organize-toggle { @apply text-xs px-2 py-1 rounded text-zinc-300 hover:bg-surface-2 transition; }
     .organize-toggle.active { @apply bg-accent/20 text-accent; }
+
+    .block-move { @apply text-xs px-1.5 py-0.5 rounded text-neutral-400 hover:bg-neutral-800 transition; }
+    .block-move:disabled { @apply opacity-30 pointer-events-none; }
 
     .org-btn { @apply text-[11px] px-2 py-1 rounded bg-surface-2 text-zinc-200 hover:bg-surface-3 transition; }
     .org-btn.disabled { @apply opacity-40 pointer-events-none; }
@@ -223,14 +245,51 @@ export class SceneListComponent {
     this.selection.select(scene.id);
   }
 
-  drop(event: CdkDragDrop<unknown>) {
-    const sceneId = event.item.data as string | undefined;
+  private suppressClick = false;
+
+  onDragEnded(): void {
+    // A real drag is followed by a synthetic click — ignore the next one so it
+    // doesn't re-select or toggle the scene that was just moved.
+    this.suppressClick = true;
+  }
+
+  moveBlock(blockId: string, delta: number): void {
+    const blocks = this.store.blocks();
+    const index = blocks.findIndex(b => b.id === blockId);
+    if (index < 0) return;
+    const to = index + delta;
+    if (to < 0 || to >= blocks.length) return;
+    this.store.moveBlock(blockId, to);
+  }
+
+  onSceneDrop(event: CdkDragDrop<string>, blockId: string): void {
+    const sceneId = event.item.data as string;
     if (!sceneId) return;
-    this.store.reorderUngroupedScene(sceneId, event.currentIndex);
-    this.selection.select(sceneId);
+    const toIndex = event.currentIndex;
+    // Defer the state update so CDK can finish tearing down its drag
+    // preview/placeholder before Angular re-renders the moved scene. Doing it
+    // synchronously leaves a "frozen" ghost element on screen.
+    setTimeout(() => {
+      this.store.moveScene(sceneId, blockId, toIndex);
+      this.selection.select(sceneId);
+    });
+  }
+
+  onUngroupedDrop(event: CdkDragDrop<string>): void {
+    const sceneId = event.item.data as string;
+    if (!sceneId) return;
+    const toIndex = event.currentIndex;
+    setTimeout(() => {
+      this.store.moveScene(sceneId, null, toIndex);
+      this.selection.select(sceneId);
+    });
   }
 
   onSceneClick(id: string) {
+    if (this.suppressClick) {
+      this.suppressClick = false;
+      return;
+    }
     if (this.organize.active()) {
       this.organize.toggleScene(id);
     } else {

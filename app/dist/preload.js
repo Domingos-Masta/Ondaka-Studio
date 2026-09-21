@@ -27,5 +27,15 @@ contextBridge.exposeInMainWorld('api', {
         ipcRenderer.on('menu:action', listener);
         return () => ipcRenderer.removeListener('menu:action', listener);
     },
+    onOpenExternalFile: (callback) => {
+        const listener = (_event, payload) => callback(payload);
+        ipcRenderer.on('project:opened-externally', listener);
+        return () => ipcRenderer.removeListener('project:opened-externally', listener);
+    },
+    onOpenFileError: (callback) => {
+        const listener = (_event, payload) => callback(payload);
+        ipcRenderer.on('project:open-error', listener);
+        return () => ipcRenderer.removeListener('project:open-error', listener);
+    },
 });
 //# sourceMappingURL=preload.js.map

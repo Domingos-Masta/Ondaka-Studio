@@ -170,6 +170,22 @@ import { renderTemplate } from '../../core/models/ai/adapters/prompt-builder';
     .editor-page-title { @apply mb-5 text-xs font-semibold uppercase tracking-widest text-zinc-500; }
     .editor-page-content { @apply min-h-[55vh] outline-none; }
 
+    /* Tables rendered via [innerHTML] in the continuous view. */
+    .editor-page-content ::ng-deep .tableWrapper { overflow-x: auto; margin: 1em 0; }
+    .editor-page-content ::ng-deep table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 0.9em;
+    }
+    .editor-page-content ::ng-deep th,
+    .editor-page-content ::ng-deep td {
+      border: 1px solid #3a3a3a;
+      padding: 0.4em 0.6em;
+      text-align: left;
+      vertical-align: top;
+    }
+    .editor-page-content ::ng-deep th { background: #2a2a2a; font-weight: 600; }
+
     .block-separator { @apply mx-auto max-w-3xl flex items-center gap-3 my-6; }
     .block-separator::before,
     .block-separator::after {
