@@ -9,7 +9,7 @@ import { ROLE_META } from '../../core/models/project.model';
   standalone: true,
   template: `
     <div class="h-14 px-4 py-2 flex items-center gap-3 text-xs">
-      <div class="text-zinc-500 tabular-nums shrink-0">
+      <div class="text-zinc-500 tabular-nums shrink-0" [class.text-over]="store.overLimit()">
         {{ format(total()) }} total
       </div>
 
@@ -27,7 +27,8 @@ import { ROLE_META } from '../../core/models/project.model';
         }
       </div>
 
-      <div class="text-zinc-500 tabular-nums shrink-0">
+      <div class="text-zinc-500 tabular-nums shrink-0" [class.text-over]="store.overLimit()">
+        @if (store.overLimit()) { <span class="mr-1" title="Over recommended limit">⚠</span> }
         {{ format(store.totalEstimatedSec()) }} est
       </div>
     </div>

@@ -10,12 +10,14 @@ import { ProjectStore } from '../../core/services/project/project.store';
 import { ImportDialogComponent } from '../../shared/components/import-dialog/import-dialog.component';
 import { TitleToScriptDialogComponent } from '../../shared/components/title-to-script-dialog/title-to-script-dialog.component';
 import { SettingsDialogComponent } from '../../shared/components/settings-dialog/settings-dialog.component';
+import { NewProjectDialogComponent } from '../../shared/components/new-project-dialog/new-project-dialog.component';
+import { SaveTemplateDialogComponent } from '../../shared/components/save-template-dialog/save-template-dialog.component';
 
 
 @Component({
   selector: 'app-toolbar',
   standalone: true,
-  imports: [FormsModule, SettingsDialogComponent, ImportDialogComponent, TitleToScriptDialogComponent],
+  imports: [FormsModule, SettingsDialogComponent, ImportDialogComponent, TitleToScriptDialogComponent, NewProjectDialogComponent, SaveTemplateDialogComponent],
   template: `
     <header class="h-12 flex items-center gap-3 px-4 bg-surface-1 border-b border-surface-3 select-none">
       <img class="app-icon" src="assets/icons/ondaka-icon.svg" alt="Ondaka Studio" title="Ondaka Studio" />
@@ -51,7 +53,7 @@ import { SettingsDialogComponent } from '../../shared/components/settings-dialog
 
       <div class="w-px h-5 bg-surface-3"></div>
 
-      <button class="icon-btn" (click)="io.newProject()" aria-label="New project" title="New project">
+      <button class="icon-btn" (click)="showNewProject.set(true)" aria-label="New project" title="New project">
         <svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h10l6 6v10H4zM14 4v6h6M12 13v6M9 16h6"/></svg>
       </button>
       <button class="icon-btn" (click)="io.open()" aria-label="Open project" title="Open project">
@@ -62,6 +64,9 @@ import { SettingsDialogComponent } from '../../shared/components/settings-dialog
       </button>
       <button class="icon-btn" (click)="io.saveAs()" aria-label="Save project as" title="Save project as">
         <svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h12l3 3v15H5zM8 3v6h8V3M12 13v6M9 16l3 3 3-3"/></svg>
+      </button>
+      <button class="icon-btn" (click)="showSaveTemplate.set(true)" aria-label="Save as template" title="Save as template">
+        <svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14v18l-7-4-7 4zM12 9v6M9 12h6"/></svg>
       </button>
 
       <button class="icon-btn" (click)="showTitleToScript.set(true)" aria-label="Generate script" title="Generate script">
@@ -76,6 +81,8 @@ import { SettingsDialogComponent } from '../../shared/components/settings-dialog
       @if (showSettings()) { <app-settings-dialog (toClose)="showSettings.set(false)" /> }
       @if (showTitleToScript()) { <app-title-to-script-dialog (toClose)="showTitleToScript.set(false)" /> }
       @if (showImport()) { <app-import-dialog (toClose)="showImport.set(false)" /> }
+      @if (showNewProject()) { <app-new-project-dialog (toClose)="showNewProject.set(false)" /> }
+      @if (showSaveTemplate()) { <app-save-template-dialog (toClose)="showSaveTemplate.set(false)" /> }
 
       <div class="w-px h-5 bg-surface-3"></div>
 
@@ -127,6 +134,8 @@ export class ToolbarComponent {
   readonly showSettings = signal(false);
   readonly showTitleToScript = signal(false);
   readonly showImport = signal(false);
+  readonly showNewProject = signal(false);
+  readonly showSaveTemplate = signal(false);
 
   constructor() {
     if (typeof window !== 'undefined' && window.api?.onMenuAction) {
@@ -136,7 +145,7 @@ export class ToolbarComponent {
 
   private handleMenuAction(action: string): void {
     switch (action) {
-      case 'new': this.io.newProject(); break;
+      case 'new': this.showNewProject.set(true); break;
       case 'open': void this.io.open(); break;
       case 'save': void this.io.save(); break;
       case 'saveAs': void this.io.saveAs(); break;
@@ -147,6 +156,7 @@ export class ToolbarComponent {
       case 'chapters': this.chapters.show(); break;
       case 'export': void this.exportCsv(); break;
       case 'fitTime': this.store.fitScriptsToTimeline(); break;
+      case 'saveTemplate': this.showSaveTemplate.set(true); break;
     }
   }
 

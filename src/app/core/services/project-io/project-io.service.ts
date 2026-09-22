@@ -2,7 +2,8 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { ToastService } from '../toast/toast.service';
 import { ProjectStore } from '../project/project.store';
-import { VideoProject } from '../../models/project.model';
+import { NewProjectOptions, VideoProject } from '../../models/project.model';
+import { ProjectTemplate } from '../../models/template.model';
 
 interface ProjectEnvelope {
     format: 'swproj';
@@ -114,9 +115,16 @@ export class ProjectIoService {
         return true;
     }
 
-    newProject() {
+    newProject(options?: NewProjectOptions) {
         if (this.isDirty() && !confirm('Discard unsaved changes?')) return;
-        this.store.newProject();
+        this.store.newProject(options);
+        this.filePath.set(null);
+        this.isDirty.set(false);
+    }
+
+    newFromTemplate(template: ProjectTemplate, title?: string) {
+        if (this.isDirty() && !confirm('Discard unsaved changes?')) return;
+        this.store.createFromTemplate(template, title);
         this.filePath.set(null);
         this.isDirty.set(false);
     }

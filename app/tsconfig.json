@@ -72,6 +72,8 @@
     "preload.ts",
     "settings-store.ts",
     "app-settings.model.ts",
+    "recent-store.ts",
+    "templates-store.ts",
   ],
 
   "exclude": [

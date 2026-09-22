@@ -37,9 +37,56 @@ export interface Take {
   recordedAt: string;          // ISO
 }
 
+export type ProjectType = 'reels' | 'stories' | 'youtube-series' | 'others';
+
+export type VideoOrientation = 'landscape' | 'portrait' | 'square';
+
+export interface ProjectTypeInfo {
+  id: ProjectType;
+  label: string;
+  description: string;
+  /** Recommended total duration for this content type, in seconds. */
+  recommendedSec: number;
+  icon: string;
+  defaultOrientation: VideoOrientation;
+}
+
+export const PROJECT_TYPES: ProjectTypeInfo[] = [
+  { id: 'reels', label: 'Reels', description: 'Short-form vertical clips.', recommendedSec: 60, icon: '📱', defaultOrientation: 'portrait' },
+  { id: 'stories', label: 'Stories', description: 'Storytelling & narrative videos.', recommendedSec: 600, icon: '📖', defaultOrientation: 'landscape' },
+  { id: 'youtube-series', label: 'YouTube Series', description: 'Long-form series episodes.', recommendedSec: 1200, icon: '🎬', defaultOrientation: 'landscape' },
+  { id: 'others', label: 'Others', description: 'Custom length video.', recommendedSec: 600, icon: '🎞️', defaultOrientation: 'landscape' },
+];
+
+export const ORIENTATIONS: { id: VideoOrientation; label: string; icon: string }[] = [
+  { id: 'landscape', label: 'Landscape', icon: '🖥️' },
+  { id: 'portrait', label: 'Portrait', icon: '📱' },
+  { id: 'square', label: 'Square', icon: '⬜' },
+];
+
+export const DEFAULT_PROJECT_TYPE: ProjectType = 'youtube-series';
+
+export function projectTypeInfo(id?: ProjectType | null): ProjectTypeInfo {
+  return PROJECT_TYPES.find(t => t.id === id) ?? PROJECT_TYPES.find(t => t.id === DEFAULT_PROJECT_TYPE)!;
+}
+
+export interface NewProjectOptions {
+  title?: string;
+  type?: ProjectType;
+  orientation?: VideoOrientation;
+  /** Custom duration limit (seconds), used when type is 'others'. */
+  limitSecOverride?: number;
+}
+
 export interface VideoProject {
   id: string;
   title: string;
+  /** Content type/category used to derive the recommended duration limit. */
+  type?: ProjectType;
+  /** Frame orientation of the video. */
+  orientation?: VideoOrientation;
+  /** Overrides the type's recommended duration when type is 'others'. */
+  limitSecOverride?: number;
   targetDurationSec: number;
   speakingWpm: number;
   scenes: Scene[];

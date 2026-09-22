@@ -16,6 +16,10 @@ interface Window {
       getAll(): Promise<Partial<import('./app/core/models/app-settings.model').AppSettings>>;
       patch(p: Partial<import('./app/core/models/app-settings.model').AppSettings>): Promise<unknown>;
     };
+    templates: {
+      getAll(): Promise<unknown[]>;
+      saveAll(templates: unknown[]): Promise<boolean>;
+    };
     onMenuAction(callback: (action: string) => void): () => void;
     secure: {
       encrypt(plain: string): Promise<{ encrypted: boolean; value: string }>;

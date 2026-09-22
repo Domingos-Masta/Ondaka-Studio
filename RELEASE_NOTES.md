@@ -1,43 +1,40 @@
-# Ondaka Studio 1.0.6
+# Ondaka Studio 1.0.7
 
 ## Overview
 
-This release focuses on the editing and organizing experience: full-featured tables and richer text in the script editor, in-place scene and block reordering, production notes for scenes and blocks, rich content in presenter mode, and opening `.swproj` projects directly from the operating system.
+This release centers on the project workflow: a richer New Project experience with content categories, video orientation and custom durations, reusable scene templates, one-click scene deletion, over-limit warnings, and a Recent Projects list in the File menu.
 
 ## Highlights
 
-### Script editor
+### New Project dialog
 
-- Insert tables (preset sizes or custom) and edit them in place with a floating toolbar: add/remove rows and columns, merge/split cells, and delete the table.
-- Drag column edges to resize columns; Tab/Shift-Tab navigate cells.
-- Rich text toolbar additions: highlight, subscript, superscript, text alignment, text color, background color, font family, font size, line height, invisible characters, and clear formatting.
-- Inline images and collapsible "details" blocks.
+- Choose to start from scratch or from a template.
+- Content categories: Reels, Stories, YouTube Series, or Others (with a custom duration limit).
+- Video orientation: landscape, portrait, or square.
 
-### Organizing scenes
+### Templates
 
-- Reorder blocks with up/down controls and reorder scenes inside a block.
-- Drag scenes between blocks, or out of a block to ungroup them.
-- Scene order stays consistent with the scene list after any reorder, keeping selection and navigation reliable.
+- Four built-in templates — YouTube Video, Instagram Reels, TikTok Video, and YouTube Short — each with empty scenes and a description explaining every scene's purpose.
+- Save the current project as a reusable template; scene titles, roles and notes are captured.
+- Templates persist locally and appear alongside the built-in ones in the New Project dialog.
 
-### Notes
+### Duration limits & warnings
 
-- Add notes to scenes and blocks from the right panel — ideal for camera movements, effects, and other production details.
+- Each category sets a recommended duration, which drives a word budget for the whole video.
+- The timing panel shows words and time against the limit and turns red with a warning when the script runs over.
+- The timeline strip totals turn red when the script exceeds the recommended limit.
 
-### Presenting
+### Scene management
 
-- Presenter mode now renders rich content (tables, images, blockquotes, and code blocks) instead of plain text.
+- Delete a scene (or a block's scene) directly from the scene list; block membership is cleaned up automatically.
 
-### Project files
+### Recent projects
 
-- `.swproj` projects can be opened from Finder/Explorer via double-click or "Open with", including while the app is already running.
+- The File menu lists the last 10 opened projects for one-click reopening, with a Clear Recent option.
 
 ## Fixed issues
 
-- Editor disappearing when side panels were collapsed.
-- Frozen drag ghost element and inconsistent scene selection after drag and drop.
-- Table row/column operations crashing on invalid selections.
-- Tables missing from Continuous view and presenter mode.
-- Column resizing computing zero-width tables.
+- The scene delete button no longer overlaps the scene timing information.
 
 ## Notes
 

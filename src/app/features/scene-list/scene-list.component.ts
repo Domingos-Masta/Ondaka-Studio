@@ -106,10 +106,17 @@ import { SceneBlock } from '../../core/models/scene-block.model';
                       <span class="text-[10px] uppercase tracking-wider text-zinc-500">
                         {{ roleLabel(item.scene.role) }}
                       </span>
-                      <span class="ml-auto text-[10px] tabular-nums"
-                            [class.text-over]="item.timing.deltaSec > 3"
-                            [class.text-ok]="Math.abs(item.timing.deltaSec) <= 3">
-                        {{ format(item.timing.estimatedSec) }} / {{ format(item.scene.targetDurationSec) }}
+                      <span class="ml-auto flex items-center gap-1.5">
+                        <span class="text-[10px] tabular-nums"
+                              [class.text-over]="item.timing.deltaSec > 3"
+                              [class.text-ok]="Math.abs(item.timing.deltaSec) <= 3">
+                          {{ format(item.timing.estimatedSec) }} / {{ format(item.scene.targetDurationSec) }}
+                        </span>
+                        @if (item.scene.lock !== 'none') {
+                          <span class="text-[10px] text-accent" title="Locked">🔒</span>
+                        }
+                        <button type="button" class="scene-delete" title="Delete scene" aria-label="Delete scene"
+                                (click)="$event.stopPropagation(); deleteScene(item.scene.id)">✕</button>
                       </span>
                     </div>
 
@@ -117,10 +124,6 @@ import { SceneBlock } from '../../core/models/scene-block.model';
                     <div class="text-xs text-zinc-500 truncate">
                       {{ preview(item.scene.script) || 'Empty script' }}
                     </div>
-
-                    @if (item.scene.lock !== 'none') {
-                      <div class="absolute top-2 right-2 text-[10px] text-accent">🔒</div>
-                    }
                   </div>
                 } @empty {
                   <div class="text-xs text-zinc-600 text-center py-2">Drop scenes here.</div>
@@ -153,10 +156,17 @@ import { SceneBlock } from '../../core/models/scene-block.model';
                 <span class="text-[10px] uppercase tracking-wider text-zinc-500">
                   {{ roleLabel(item.scene.role) }}
                 </span>
-                <span class="ml-auto text-[10px] tabular-nums"
-                      [class.text-over]="item.timing.deltaSec > 3"
-                      [class.text-ok]="Math.abs(item.timing.deltaSec) <= 3">
-                  {{ format(item.timing.estimatedSec) }} / {{ format(item.scene.targetDurationSec) }}
+                <span class="ml-auto flex items-center gap-1.5">
+                  <span class="text-[10px] tabular-nums"
+                        [class.text-over]="item.timing.deltaSec > 3"
+                        [class.text-ok]="Math.abs(item.timing.deltaSec) <= 3">
+                    {{ format(item.timing.estimatedSec) }} / {{ format(item.scene.targetDurationSec) }}
+                  </span>
+                  @if (item.scene.lock !== 'none') {
+                    <span class="text-[10px] text-accent" title="Locked">🔒</span>
+                  }
+                  <button type="button" class="scene-delete" title="Delete scene" aria-label="Delete scene"
+                          (click)="$event.stopPropagation(); deleteScene(item.scene.id)">✕</button>
                 </span>
               </div>
 
@@ -164,10 +174,6 @@ import { SceneBlock } from '../../core/models/scene-block.model';
               <div class="text-xs text-zinc-500 truncate">
                 {{ preview(item.scene.script) || 'Empty script' }}
               </div>
-
-              @if (item.scene.lock !== 'none') {
-                <div class="absolute top-2 right-2 text-[10px] text-accent">🔒</div>
-              }
             </div>
           } @empty {
             <div class="text-xs text-zinc-600 text-center py-2">Drop scenes here.</div>
@@ -210,6 +216,13 @@ import { SceneBlock } from '../../core/models/scene-block.model';
     }
     .check.checked { @apply border-accent bg-accent; }
     .check.checked::after { content: '✓'; @apply text-[10px] text-white leading-none; }
+
+    .scene-delete {
+      @apply w-4 h-4 shrink-0 flex items-center justify-center rounded
+             text-zinc-500 opacity-0 transition;
+    }
+    .scene-delete:hover { @apply text-over bg-surface-3; }
+    .scene-card:hover .scene-delete { @apply opacity-100; }
   `],
 })
 export class SceneListComponent {
@@ -314,6 +327,12 @@ export class SceneListComponent {
   mergeBlock(block: SceneBlock) {
     const scene = this.store.mergeScenes(block.sceneIds);
     if (scene) this.selection.select(scene.id);
+  }
+
+  deleteScene(id: string) {
+    const wasSelected = this.selection.selectedId() === id;
+    this.store.removeScene(id);
+    if (wasSelected) this.selection.clear();
   }
 
   roleLabel(r: keyof typeof ROLE_META) { return ROLE_META[r].label; }

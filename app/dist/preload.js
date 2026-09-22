@@ -22,6 +22,11 @@ contextBridge.exposeInMainWorld('api', {
         getAll: () => ipcRenderer.invoke('settings:getAll'),
         patch: (partial) => ipcRenderer.invoke('settings:patch', partial),
     },
+    // Templates
+    templates: {
+        getAll: () => ipcRenderer.invoke('templates:getAll'),
+        saveAll: (templates) => ipcRenderer.invoke('templates:saveAll', templates),
+    },
     onMenuAction: (callback) => {
         const listener = (_event, action) => callback(action);
         ipcRenderer.on('menu:action', listener);

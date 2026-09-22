@@ -1,6 +1,7 @@
 // src/app/core/services/project.store.ts
 import { Injectable, Injector, computed, inject, signal } from '@angular/core';
-import { AiRevision, Scene, Take, toEditorHtml, VideoProject } from '../../models/project.model';
+import { AiRevision, DEFAULT_PROJECT_TYPE, NewProjectOptions, ProjectType, Scene, Take, toEditorHtml, VideoProject, projectTypeInfo } from '../../models/project.model';
+import { ProjectTemplate, templateCategoryInfo } from '../../models/template.model';
 import { TimingService } from '../timing/timing.service';
 import { BLOCK_PALETTE, SceneBlock } from '../../models/scene-block.model';
 import { ToastService } from '../toast/toast.service';
@@ -9,11 +10,17 @@ import { SelectionService } from '../selection/selection.service';
 
 const uid = () => crypto.randomUUID();
 
-function blankProject(title = 'Untitled Video'): VideoProject {
+function blankProject(options: NewProjectOptions = {}): VideoProject {
+  const type = options.type ?? DEFAULT_PROJECT_TYPE;
+  const info = projectTypeInfo(type);
+  const limitSec = options.limitSecOverride ?? info.recommendedSec;
   return {
     id: uid(),
-    title,
-    targetDurationSec: 300,
+    title: options.title ?? 'Untitled Video',
+    type,
+    orientation: options.orientation ?? info.defaultOrientation,
+    limitSecOverride: options.limitSecOverride,
+    targetDurationSec: limitSec,
     speakingWpm: 145,
     scenes: [],
     takes: [],
@@ -41,6 +48,27 @@ export class ProjectStore {
 
   readonly totalTargetSec = computed(() =>
     this.scenes().reduce((sum, s) => sum + s.targetDurationSec, 0)
+  );
+
+  /** Sum of spoken words across every scene's script. */
+  readonly totalWordCount = computed(() =>
+    this.scenes().reduce((sum, s) => sum + this.timing.countWords(s.script), 0)
+  );
+
+  /** Recommended duration limit for the project's type/category (custom override wins). */
+  readonly limitSec = computed(() => {
+    const p = this._project();
+    return p.limitSecOverride ?? projectTypeInfo(p.type).recommendedSec;
+  });
+
+  /** Word budget that fits inside the type's recommended duration. */
+  readonly limitWordBudget = computed(() =>
+    this.timing.wordsForDuration(this.limitSec(), this._project().speakingWpm, 0)
+  );
+
+  /** True when the script exceeds the recommended limit for the project type. */
+  readonly overLimit = computed(() =>
+    this.totalEstimatedSec() > this.limitSec() || this.totalWordCount() > this.limitWordBudget()
   );
 
   readonly scenesWithTiming = computed(() =>
@@ -107,10 +135,44 @@ export class ProjectStore {
     });
   }
 
-  newProject(title?: string) { this._project.set(blankProject(title)); }
+  newProject(options?: NewProjectOptions) { this._project.set(blankProject(options)); }
 
   patch(patch: Partial<VideoProject>) {
     this._project.update(p => ({ ...p, ...patch, updatedAt: new Date().toISOString() }));
+  }
+
+  updateProjectType(type: ProjectType) {
+    this._project.update(p => ({ ...p, type, updatedAt: new Date().toISOString() }));
+  }
+
+  createFromTemplate(template: ProjectTemplate, title?: string): void {
+    const category = templateCategoryInfo(template.category);
+    const scenes: Scene[] = template.scenes.map((ts, i) => ({
+      id: uid(),
+      order: i,
+      title: ts.title,
+      role: ts.role,
+      script: '',
+      targetDurationSec: ts.targetDurationSec,
+      pauseSec: 0,
+      lock: 'none',
+      notes: ts.description,
+      assets: [],
+      aiRevisions: [],
+    }));
+    this._project.set({
+      id: uid(),
+      title: title?.trim() || template.name,
+      type: category.projectType,
+      orientation: template.orientation,
+      targetDurationSec: scenes.reduce((sum, s) => sum + s.targetDurationSec, 0),
+      speakingWpm: 145,
+      scenes,
+      takes: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      blocks: [],
+    });
   }
 
   // --- Scene CRUD ---
@@ -144,6 +206,9 @@ export class ProjectStore {
     this._project.update(p => ({
       ...p,
       scenes: p.scenes.filter(s => s.id !== id).map((s, i) => ({ ...s, order: i })),
+      blocks: (p.blocks ?? [])
+        .map(b => ({ ...b, sceneIds: b.sceneIds.filter(sid => sid !== id) }))
+        .filter(b => b.sceneIds.length > 0),
       updatedAt: new Date().toISOString(),
     }));
   }

@@ -1,6 +1,6 @@
 import Store from 'electron-store';
 const store = new Store({
-    name: 'scriptwriter-settings',
+    name: 'ondaka-settings',
     encryptionKey: 'swpro-settings-v1', // obfuscation; see note below
 });
 export const settingsStore = {

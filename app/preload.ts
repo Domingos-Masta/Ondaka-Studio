@@ -11,7 +11,7 @@ export interface ProjectSummary {
 export type MenuAction =
   | 'new' | 'open' | 'save' | 'saveAs'
   | 'generate' | 'import' | 'settings'
-  | 'present' | 'chapters' | 'export' | 'fitTime';
+  | 'present' | 'chapters' | 'export' | 'fitTime' | 'saveTemplate';
 
 contextBridge.exposeInMainWorld('api', {
   // Projects
@@ -47,6 +47,12 @@ contextBridge.exposeInMainWorld('api', {
   settings: {
     getAll: () => ipcRenderer.invoke('settings:getAll'),
     patch: (partial: unknown) => ipcRenderer.invoke('settings:patch', partial),
+  },
+
+  // Templates
+  templates: {
+    getAll: () => ipcRenderer.invoke('templates:getAll'),
+    saveAll: (templates: unknown[]) => ipcRenderer.invoke('templates:saveAll', templates),
   },
 
   onMenuAction: (callback: (action: MenuAction) => void) => {
@@ -87,6 +93,10 @@ declare global {
       settings: {
         getAll: () => Promise<unknown>;
         patch: (partial: unknown) => Promise<void>;
+      };
+      templates: {
+        getAll: () => Promise<unknown[]>;
+        saveAll: (templates: unknown[]) => Promise<boolean>;
       };
       onMenuAction: (callback: (action: MenuAction) => void) => () => void;
       onOpenExternalFile: (callback: (payload: { filePath: string; project: unknown }) => void) => () => void;

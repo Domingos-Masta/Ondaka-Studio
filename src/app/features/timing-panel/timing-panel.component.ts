@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ProjectStore } from '../../core/services/project/project.store';
 import { TimingService } from '../../core/services/timing/timing.service';
 import { SelectionService } from '../../core/services/selection/selection.service';
+import { ORIENTATIONS, PROJECT_TYPES, projectTypeInfo } from '../../core/models/project.model';
 
 @Component({
   selector: 'app-timing-panel',
@@ -87,6 +88,48 @@ import { SelectionService } from '../../core/services/selection/selection.servic
       </section>
 
       <section>
+        <h3 class="panel-title">Type & limit</h3>
+        <select class="note-select mb-2"
+                [ngModel]="store.project().type ?? 'youtube-series'"
+                (ngModelChange)="store.updateProjectType($event)">
+          @for (t of types; track t.id) {
+            <option [value]="t.id">{{ t.icon }} {{ t.label }} — {{ format(t.recommendedSec) }}</option>
+          }
+        </select>
+
+        @if ((store.project().type ?? 'youtube-series') === 'others') {
+          <label class="field mb-2">
+            <span>Limit (s)</span>
+            <input type="number" min="1" step="5"
+                   [ngModel]="store.limitSec()"
+                   (ngModelChange)="store.patch({ limitSecOverride: +$event })" />
+          </label>
+        }
+
+        <select class="note-select mb-2"
+                [ngModel]="store.project().orientation ?? 'landscape'"
+                (ngModelChange)="store.patch({ orientation: $event })">
+          @for (o of orientations; track o.id) {
+            <option [value]="o.id">{{ o.icon }} {{ o.label }}</option>
+          }
+        </select>
+
+        <div class="flex justify-between tabular-nums" [class.text-over]="store.overLimit()">
+          <span class="text-zinc-500">Words</span>
+          <span>{{ store.totalWordCount() }} / {{ store.limitWordBudget() }}</span>
+        </div>
+        <div class="flex justify-between tabular-nums" [class.text-over]="store.overLimit()">
+          <span class="text-zinc-500">Time</span>
+          <span>{{ format(store.totalEstimatedSec()) }} / {{ format(store.limitSec()) }}</span>
+        </div>
+        @if (store.overLimit()) {
+          <p class="mt-2 rounded border border-over/30 bg-over/10 px-2 py-1.5 text-[11px] leading-snug text-over">
+            ⚠ Script exceeds the recommended {{ typeInfo().label.toLowerCase() }} limit — trim scenes or pick a longer category.
+          </p>
+        }
+      </section>
+
+      <section>
         <h3 class="panel-title">Fitting</h3>
         <button class="btn-block" (click)="store.fitScriptsToTimeline()">
           Fit time → script
@@ -134,6 +177,10 @@ export class TimingPanelComponent {
 
   readonly noteTarget = signal<'scene' | 'block'>('scene');
   readonly selectedBlockId = signal<string>('');
+
+  readonly types = PROJECT_TYPES;
+  readonly orientations = ORIENTATIONS;
+  readonly typeInfo = computed(() => projectTypeInfo(this.store.project().type));
 
   readonly selectedScene = this.selection.selected;
 

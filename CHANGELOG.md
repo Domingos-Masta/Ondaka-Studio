@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [Unreleased]
 
+## [1.0.7] - 2026-09-22
+
+### Added
+
+- Delete a scene directly from the scene list, including scenes inside a block.
+- New Project dialog with content categories (Reels, Stories, YouTube Series, Others) and a recommended duration/word limit per category.
+- "Others" category with a custom duration limit, plus video orientation (landscape / portrait / square).
+- Project templates: four built-in categories (YouTube Video, Instagram Reels, TikTok Video, YouTube Short) with empty scenes and per-scene purpose descriptions, plus saving the current project as a reusable template.
+- Recent files in the File menu (last 10 opened projects) with a clear option.
+- Over-limit warning (red) in the timing panel and timeline when the script exceeds the recommended duration for the project category.
+
+### Fixed
+
+- Scene delete button no longer overlaps the scene timing information.
+
 ## [1.0.6] - 2026-09-21
 
 ### Added

@@ -1,4 +1,6 @@
 import { settingsStore } from './settings-store.js';
+import { recentStore } from './recent-store.js';
+import { templatesStore } from './templates-store.js';
 // app/main.ts
 import { app, BrowserWindow, ipcMain, dialog, shell, systemPreferences, Menu } from 'electron';
 import * as path from 'path';
@@ -39,6 +41,7 @@ async function readAndSendProject(filePath: string): Promise<void> {
   try {
     const raw = await fs.readFile(filePath, 'utf-8');
     const project = JSON.parse(raw);
+    addRecentFile(filePath, (project as { title?: string })?.title);
     win?.webContents.send('project:opened-externally', { filePath, project });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
@@ -53,6 +56,35 @@ function openProjectFile(filePath: string): void {
   } else {
     pendingOpenPath = filePath;
   }
+}
+
+function addRecentFile(filePath: string, title?: string): void {
+  recentStore.add({
+    path: filePath,
+    title: title || path.basename(filePath),
+    openedAt: new Date().toISOString(),
+  });
+  installApplicationMenu();
+}
+
+function buildRecentMenu(): Electron.MenuItemConstructorOptions[] {
+  const files = recentStore.getAll();
+  if (files.length === 0) {
+    return [{ label: 'No Recent Projects', enabled: false }];
+  }
+  const items: Electron.MenuItemConstructorOptions[] = files.slice(0, 10).map((f) => ({
+    label: f.title || path.basename(f.path),
+    click: () => openProjectFile(f.path),
+  }));
+  items.push({ type: 'separator' });
+  items.push({
+    label: 'Clear Recent',
+    click: () => {
+      recentStore.clear();
+      installApplicationMenu();
+    },
+  });
+  return items;
 }
 
 function createWindow() {
@@ -150,6 +182,7 @@ function installApplicationMenu() {
       submenu: [
         { label: 'New Project', accelerator: 'CmdOrCtrl+N', click: sendAction('new') },
         { label: 'Open Project…', accelerator: 'CmdOrCtrl+O', click: sendAction('open') },
+        { label: 'Open Recent', submenu: buildRecentMenu() },
         { label: 'Save Project', accelerator: 'CmdOrCtrl+S', click: sendAction('save') },
         { label: 'Save Project As…', accelerator: 'Shift+CmdOrCtrl+S', click: sendAction('saveAs') },
         { type: 'separator' },
@@ -164,6 +197,7 @@ function installApplicationMenu() {
       submenu: [
         { label: 'Generate from Title…', click: sendAction('generate') },
         { label: 'Fit Time to Script', click: sendAction('fitTime') },
+        { label: 'Save as Template…', click: sendAction('saveTemplate') },
         { label: 'Present', click: sendAction('present') },
         { label: 'Chapters', click: sendAction('chapters') },
         { label: 'Settings…', click: sendAction('settings') },
@@ -338,6 +372,7 @@ ipcMain.handle('project:save-as', async (_e, payload: { envelope: unknown; sugge
   });
   if (res.canceled || !res.filePath) return null;
   await fs.writeFile(res.filePath, JSON.stringify(payload.envelope, null, 2), 'utf-8');
+  addRecentFile(res.filePath, (payload.envelope as { project?: { title?: string } })?.project?.title);
   return res.filePath;
 });
 
@@ -346,6 +381,7 @@ ipcMain.handle('project:save-to-path', async (_e, payload: { filePath: string; e
     throw new Error('Invalid .swproj path');
   }
   await fs.writeFile(payload.filePath, JSON.stringify(payload.envelope, null, 2), 'utf-8');
+  addRecentFile(payload.filePath, (payload.envelope as { project?: { title?: string } })?.project?.title);
   return payload.filePath;
 });
 
@@ -358,11 +394,18 @@ ipcMain.handle('project:open-file', async () => {
   const filePath = res.filePaths[0];
   const raw = await fs.readFile(filePath, 'utf-8');
   const envelope = JSON.parse(raw);
+  addRecentFile(filePath, (envelope as { project?: { title?: string } })?.project?.title);
   return { filePath, project: envelope };
 });
 
 ipcMain.handle('settings:getAll', () => settingsStore.getAll());
 ipcMain.handle('settings:patch', (_e, partial) => settingsStore.patch(partial));
+
+ipcMain.handle('templates:getAll', () => templatesStore.getAll());
+ipcMain.handle('templates:saveAll', (_e, templates: unknown[]) => {
+  templatesStore.saveAll(templates);
+  return true;
+});
 
 // Optional: secure at-rest storage for a specific API key using safeStorage
 // import { safeStorage } from 'electron';

@@ -1,6 +1,6 @@
 {
   "name": "ondaka-studio",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "main": "app/dist/main.js",
   "description": "A cross-platform desktop application for scriptwriting, built with love for content creators.",
   "homepage": "https://github.com/Domingos-Masta/Ondaka-Studio",
