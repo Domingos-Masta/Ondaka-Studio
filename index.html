@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ondaka Studio — Pre-production scripting for YouTube creators</title>
-  <meta name="description" content="Ondaka Studio is a free, open-source desktop app for planning, scripting, timing and rehearsing YouTube videos — from scene outline to timed, teleprompter-ready delivery." />
+  <title>Ondaka Studio — Pre-production scripting for video creators</title>
+  <meta name="description" content="Ondaka Studio is a free, open-source desktop app for planning, scripting, timing and rehearsing videos — start from a template, outline scenes, and stay inside your time limit." />
   <meta property="og:title" content="Ondaka Studio" />
   <meta property="og:description" content="Plan, script, time and rehearse your videos before you hit record." />
   <meta property="og:type" content="website" />
@@ -524,6 +524,49 @@
     .download-card .btn { width: 100%; }
     .download-card .alt { font-size: 12px; color: var(--text-dim); }
 
+    /* ---------- Templates ---------- */
+    .templates-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+    }
+    .tpl-card {
+      background: var(--surface-1);
+      border: 1px solid var(--border);
+      border-top: 3px solid var(--tpl, var(--accent));
+      border-radius: var(--radius);
+      padding: 26px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: transform .2s, border-color .2s, background .2s;
+    }
+    .tpl-card:hover {
+      transform: translateY(-4px);
+      background: var(--surface-2);
+      border-color: rgba(255, 255, 255, 0.14);
+    }
+    .tpl-top { display: flex; align-items: center; justify-content: space-between; }
+    .tpl-icon { font-size: 28px; line-height: 1; }
+    .tpl-tag {
+      font-size: 10.5px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 3px 10px;
+    }
+    .tpl-card h3 { font-size: 18px; font-weight: 700; letter-spacing: -0.01em; }
+    .tpl-card p { font-size: 13.5px; color: var(--text-muted); flex: 1; }
+    .tpl-meta {
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--tpl, var(--accent-hover));
+    }
+
     /* ---------- CTA ---------- */
     .final-cta {
       text-align: center;
@@ -570,6 +613,7 @@
       .ai-band { grid-template-columns: 1fr; padding: 44px 32px; }
       .stats { grid-template-columns: repeat(2, 1fr); }
       .download-grid { grid-template-columns: 1fr; max-width: 400px; margin: 0 auto; }
+      .templates-grid { grid-template-columns: repeat(2, 1fr); }
     }
     @media (max-width: 620px) {
       .nav-links { display: none; }
@@ -589,6 +633,7 @@
       .hamburger { display: block; }
       .features-grid { grid-template-columns: 1fr; }
       .steps { grid-template-columns: 1fr; }
+      .templates-grid { grid-template-columns: 1fr; }
       .hero { padding: 64px 0 40px; }
       section { padding: 64px 0; }
     }
@@ -611,6 +656,7 @@
 
       <div class="nav-links" id="navLinks">
         <a href="#features">Features</a>
+        <a href="#templates">Templates</a>
         <a href="#workflow">Workflow</a>
         <a href="#ai">AI</a>
         <a href="#download">Download</a>
@@ -631,7 +677,7 @@
     <div class="container">
       <span class="badge"><span class="dot"></span> Free &amp; open source · macOS · Windows · Linux</span>
       <h1>Write, time &amp; rehearse your scripts <span class="grad">before you hit record.</span></h1>
-      <p class="lead">Ondaka Studio is the pre-production workspace for YouTube creators — plan scenes, draft scripts, dial in your pacing, and run a teleprompter, all in one focused desktop app.</p>
+      <p class="lead">Ondaka Studio is the pre-production workspace for creators — start from a template or a blank outline, plan scenes, draft scripts, stay inside your time limit, and run a teleprompter, all in one focused desktop app.</p>
       <div class="hero-ctas">
         <a class="btn btn-primary btn-lg" href="#download">Download for free</a>
         <a class="btn btn-ghost btn-lg" href="#features">See what's inside</a>
@@ -640,8 +686,8 @@
 
       <div class="stats">
         <div class="stat"><div class="num" style="color:#818cf8">8</div><div class="label">Scene roles</div></div>
-        <div class="stat"><div class="num" style="color:#f59e0b">3</div><div class="label">Desktop platforms</div></div>
-        <div class="stat"><div class="num" style="color:#22c55e">∞</div><div class="label">Takes per scene</div></div>
+        <div class="stat"><div class="num" style="color:#f59e0b">4</div><div class="label">Template categories</div></div>
+        <div class="stat"><div class="num" style="color:#22c55e">10</div><div class="label">Recent projects</div></div>
         <div class="stat"><div class="num" style="color:#0ea5e9">WPM</div><div class="label">Pacing control</div></div>
       </div>
 
@@ -654,6 +700,7 @@
           <div class="mockup-grid">
             <div class="mockup-col">
               <h4>Scenes</h4>
+              <div class="mock-block" style="border-left-color:#f59e0b">New Project → Template: YouTube Video</div>
               <div class="mock-block">Block 1 · Hook &amp; Intro</div>
               <div class="mock-scene sel"><div class="row"><span class="mock-dot" style="background:#ef4444"></span><span class="t">The Hook</span></div><div class="sub">0:08 · 34 words</div></div>
               <div class="mock-scene"><div class="row"><span class="mock-dot" style="background:#f59e0b"></span><span class="t">Intro</span></div><div class="sub">0:20 · 48 words</div></div>
@@ -672,12 +719,13 @@
               </div>
             </div>
             <div class="mockup-col mock-timing">
-              <h4>Timing</h4>
+              <h4>Timing &amp; limit</h4>
               <div class="bar"><span></span></div>
+              <div class="kv"><span>Category</span><b>YouTube Series</b></div>
               <div class="kv"><span>Words</span><b>34 / 34</b></div>
-              <div class="kv"><span>Est. time</span><b>0:08 / 0:08</b></div>
+              <div class="kv"><span>Est. time</span><b>0:08 / 20:00</b></div>
               <div class="kv"><span>Pace</span><b>145 wpm</b></div>
-              <div class="kv"><span>Status</span><b style="color:var(--emerald)">✓ on time</b></div>
+              <div class="kv"><span>Status</span><b style="color:var(--emerald)">✓ under limit</b></div>
             </div>
           </div>
         </div>
@@ -719,11 +767,63 @@
           <p>Generate scripts from a title, rewrite or expand selected text, and import TXT/DOCX — powered by your own key from OpenAI, Gemini, DeepSeek or Anthropic.</p>
         </div>
         <div class="feature reveal">
+          <div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h14v18l-7-4-7 4z"/><path d="M12 8v6M9 11h6"/></svg></div>
+          <h3>Start from a template</h3>
+          <p>Jump into YouTube Video, Instagram Reels, TikTok or YouTube Short templates — empty scenes with a description of what each one should do.</p>
+        </div>
+        <div class="feature reveal">
+          <div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z"/><path d="M12 7v5l3 2"/></svg></div>
+          <h3>Limits &amp; warnings</h3>
+          <p>Choose a category with a recommended length — or set your own — and get a red warning the moment your script runs over.</p>
+        </div>
+        <div class="feature reveal">
+          <div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v4l3 2"/><circle cx="12" cy="12" r="9"/></svg></div>
+          <h3>Recent projects</h3>
+          <p>Reopen your last 10 projects straight from the File menu — no digging through folders between uploads.</p>
+        </div>
+        <div class="feature reveal">
           <div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 11l5 4 5-4"/><path d="M5 21h14"/></svg></div>
           <h3>Export &amp; share</h3>
           <p>Export timed scene plans and CSV breakdowns, generate YouTube chapter lists, and hand a production-ready plan straight to your edit.</p>
         </div>
       </div>
+    </div>
+  </section>
+
+  <section id="templates">
+    <div class="container">
+      <div class="section-head reveal">
+        <span class="kicker">Hit the ground running</span>
+        <h2>Start from a proven template</h2>
+        <p>Four built-in templates give you empty scenes with a clear purpose for each — then save your own and reuse them on every upload.</p>
+      </div>
+      <div class="templates-grid">
+        <div class="tpl-card reveal" style="--tpl:#ef4444">
+          <div class="tpl-top"><span class="tpl-icon">▶️</span><span class="tpl-tag">Landscape</span></div>
+          <h3>YouTube Video</h3>
+          <p>Hook, intro, three main points, recap, CTA and outro — a complete long-form structure.</p>
+          <span class="tpl-meta">8 scenes · ~10 min</span>
+        </div>
+        <div class="tpl-card reveal" style="--tpl:#f59e0b">
+          <div class="tpl-top"><span class="tpl-icon">📸</span><span class="tpl-tag">Portrait</span></div>
+          <h3>Instagram Reels</h3>
+          <p>Hook, main point, call to action and a loop-friendly outro for short-form vertical clips.</p>
+          <span class="tpl-meta">4 scenes · ~60 sec</span>
+        </div>
+        <div class="tpl-card reveal" style="--tpl:#22c55e">
+          <div class="tpl-top"><span class="tpl-icon">🎵</span><span class="tpl-tag">Portrait</span></div>
+          <h3>TikTok Video</h3>
+          <p>Hook, setup, payoff and CTA — built for a first-second hook that stops the scroll.</p>
+          <span class="tpl-meta">4 scenes · ~45 sec</span>
+        </div>
+        <div class="tpl-card reveal" style="--tpl:#0ea5e9">
+          <div class="tpl-top"><span class="tpl-icon">📲</span><span class="tpl-tag">Portrait</span></div>
+          <h3>YouTube Short</h3>
+          <p>Hook, main point, a second beat and a CTA that points to the long-form video.</p>
+          <span class="tpl-meta">4 scenes · ~60 sec</span>
+        </div>
+      </div>
+      <p style="text-align:center; margin-top:24px; font-size:14px; color:var(--text-dim);">Save any project as your own template — scene titles, roles and notes included.</p>
     </div>
   </section>
 
@@ -734,7 +834,7 @@
         <h2>From outline to on-camera in four steps</h2>
       </div>
       <div class="steps">
-        <div class="step reveal"><h3>Outline</h3><p>Break the video into hook, intro, points, demo, transition and CTA scenes — organized into blocks.</p></div>
+        <div class="step reveal"><h3>Outline</h3><p>Start from a template or a blank page, then shape the video into hook, intro, points, demo, transition and CTA scenes.</p></div>
         <div class="step reveal"><h3>Write</h3><p>Draft each scene in the editor with live word counts, and let AI help refine the wording when you want it.</p></div>
         <div class="step reveal"><h3>Time</h3><p>Set your speaking pace and watch estimated durations update. Fit the script to your target length.</p></div>
         <div class="step reveal"><h3>Present &amp; export</h3><p>Rehearse with the teleprompter, then export a timed plan and chapters for the edit.</p></div>
@@ -827,7 +927,7 @@
         <a href="https://github.com/" target="_blank" rel="noopener">Releases</a>
         <a href="https://github.com/" target="_blank" rel="noopener">License</a>
       </div>
-      <div class="footer-copy">© 2026 Ondaka Studio · Pre-production scripting for YouTube creators · GPL-2.0</div>
+      <div class="footer-copy">© 2026 Ondaka Studio · Pre-production scripting for video creators · GPL-2.0</div>
     </div>
   </footer>
 
