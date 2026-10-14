@@ -6,6 +6,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [Unreleased]
 
+### Added
+
+- Multiple open scripts in tabs. Every tab is a complete workspace with its own scenes, editor, file path, unsaved-changes indicator and selected scene; closing a tab with unsaved work asks first, and the last tab is always replaced by a fresh one.
+- Tab menu actions and shortcuts: New Tab (⌘/Ctrl+T), Close Tab (⌘/Ctrl+W), Close Window (⇧⌘/Ctrl+W), and Next/Previous Tab (Ctrl+Tab / Ctrl+Shift+Tab).
+- Opening a `.swproj` (from the toolbar, the File menu, a recent file or a double-click) now opens it in its own tab instead of replacing the current script.
+
+### Security
+
+- Added a strict Content-Security-Policy to the renderer, so only the app's own scripts can run. Critical-CSS inlining is disabled so production stylesheets load without inline handlers under that policy.
+- Enabled the Chromium renderer sandbox (`sandbox: true`) and moved the preload script to CommonJS so it can run inside it.
+- Blocked navigation away from the app, denied `window.open`/`<webview>` and restricted permissions to the app's own pages (microphone and clipboard only).
+- Validated every IPC payload: project/take ids can no longer traverse outside the app's data directory, and `.swproj` files can only be written to a path the user picked in this session.
+- Script HTML coming from `.swproj` files, imported documents or AI output is now sanitized against an allow-list before it is rendered or stored.
+- AI provider calls now run in the main process: the renderer sends the conversation and never receives the API key (`hasApiKey` tells the settings UI a key is stored). The settings dialog can still replace or remove a key.
+- Provider API keys are encrypted at rest with Electron `safeStorage` (OS keychain) when available, keeping existing settings readable on upgrade.
+- Exported CSV cells can no longer be interpreted as spreadsheet formulas.
+- Removed the unused renderer service that called `window.require('fs')` / `child_process.exec`.
+- macOS builds enable the hardened runtime with explicit entitlements (`build/entitlements.mac.plist`) and are ready for notarization once signing credentials are provided.
+
+### Fixed
+
+- Draft autosave now actually runs — the previous bootstrap provider never created the service — and it follows the Autosave setting (`enabled` / `debounceMs`), backing up every open tab rather than only the current one.
+- Project files, drafts, recordings and exports are written through a temporary file and renamed into place, and draft writes are serialized, so an interrupted or overlapping write can no longer leave a half-written (unreadable) file behind.
+- Editing the project title no longer throws inside the toolbar's two-way binding.
+- The script editor no longer writes into a destroyed editor instance when the workspace is swapped (for example switching to an empty tab), which surfaced as a ProseMirror `matchesNode` error.
+- `updatedAt` is now strictly increasing, so two edits in the same millisecond are no longer treated as a single change.
+
 ## [1.0.7] - 2026-09-22
 
 ### Added

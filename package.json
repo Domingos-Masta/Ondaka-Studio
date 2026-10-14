@@ -38,6 +38,10 @@
     "files": [
       "dist/**/*",
       "app/dist/**/*",
+      "!**/.env*",
+      "!**/*.pem",
+      "!**/*.key",
+      "!**/*.p12",
       "package.json"
     ],
     "directories": {
@@ -56,7 +60,11 @@
       "target": [
         "dmg",
         "zip"
-      ]
+      ],
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist"
     },
     "win": {
       "icon": "build/icons/ondaka-icon.png",
@@ -87,6 +95,7 @@
     "@domternal/core": "1.1.1",
     "@domternal/extension-block-controls": "1.1.1",
     "@domternal/theme": "1.1.1",
+    "dompurify": "3.4.17",
     "jspdf": "4.2.1",
     "mammoth": "1.12.3",
     "rxjs": "7.8.2",

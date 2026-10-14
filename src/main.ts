@@ -10,7 +10,6 @@ import { CoreModule } from './app/core/core.module';
 import {provideTranslateService} from '@ngx-translate/core';
 import {provideTranslateHttpLoader} from '@ngx-translate/http-loader';
 import { PageNotFoundComponent } from './app/shared/components';
-import { AutosaveService } from './app/core/services/autosave/autosave.service';
 
 if (APP_CONFIG.production) {
   enableProdMode();
@@ -18,8 +17,6 @@ if (APP_CONFIG.production) {
 
 bootstrapApplication(AppComponent, {
   providers: [
-    // AutosaveService is `providedIn: 'root'` — inject it once so it activates:
-    { provide: 'AUTOSAVE_BOOTSTRAP', useFactory: (a: AutosaveService) => a, deps: [AutosaveService] },
     provideZoneChangeDetection(),provideHttpClient(withInterceptorsFromDi()),
     provideTranslateService({
       loader: provideTranslateHttpLoader({

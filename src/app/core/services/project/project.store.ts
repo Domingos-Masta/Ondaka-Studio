@@ -10,7 +10,8 @@ import { SelectionService } from '../selection/selection.service';
 
 const uid = () => crypto.randomUUID();
 
-function blankProject(options: NewProjectOptions = {}): VideoProject {
+/** Build an empty project of the requested type without touching any store. */
+export function blankProject(options: NewProjectOptions = {}): VideoProject {
   const type = options.type ?? DEFAULT_PROJECT_TYPE;
   const info = projectTypeInfo(type);
   const limitSec = options.limitSecOverride ?? info.recommendedSec;
@@ -23,6 +24,37 @@ function blankProject(options: NewProjectOptions = {}): VideoProject {
     targetDurationSec: limitSec,
     speakingWpm: 145,
     scenes: [],
+    takes: [],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    blocks: [],
+  };
+}
+
+/** Build a project from a template without touching any store. */
+export function projectFromTemplate(template: ProjectTemplate, title?: string): VideoProject {
+  const category = templateCategoryInfo(template.category);
+  const scenes: Scene[] = template.scenes.map((ts, i) => ({
+    id: uid(),
+    order: i,
+    title: ts.title,
+    role: ts.role,
+    script: '',
+    targetDurationSec: ts.targetDurationSec,
+    pauseSec: 0,
+    lock: 'none',
+    notes: ts.description,
+    assets: [],
+    aiRevisions: [],
+  }));
+  return {
+    id: uid(),
+    title: title?.trim() || template.name,
+    type: category.projectType,
+    orientation: template.orientation,
+    targetDurationSec: scenes.reduce((sum, s) => sum + s.targetDurationSec, 0),
+    speakingWpm: 145,
+    scenes,
     takes: [],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -137,42 +169,27 @@ export class ProjectStore {
 
   newProject(options?: NewProjectOptions) { this._project.set(blankProject(options)); }
 
+  /**
+   * `Date.now()` has millisecond resolution, so two edits can share a timestamp.
+   * Keeping `updatedAt` strictly increasing lets the tab list compare it against
+   * the last saved revision to decide whether a document has unsaved changes.
+   */
+  private stamp(previous: string | undefined): string {
+    const previousMs = Date.parse(previous ?? '');
+    const floor = Number.isNaN(previousMs) ? 0 : previousMs + 1;
+    return new Date(Math.max(Date.now(), floor)).toISOString();
+  }
+
   patch(patch: Partial<VideoProject>) {
-    this._project.update(p => ({ ...p, ...patch, updatedAt: new Date().toISOString() }));
+    this._project.update(p => ({ ...p, ...patch, updatedAt: this.stamp(p.updatedAt) }));
   }
 
   updateProjectType(type: ProjectType) {
-    this._project.update(p => ({ ...p, type, updatedAt: new Date().toISOString() }));
+    this._project.update(p => ({ ...p, type, updatedAt: this.stamp(p.updatedAt) }));
   }
 
   createFromTemplate(template: ProjectTemplate, title?: string): void {
-    const category = templateCategoryInfo(template.category);
-    const scenes: Scene[] = template.scenes.map((ts, i) => ({
-      id: uid(),
-      order: i,
-      title: ts.title,
-      role: ts.role,
-      script: '',
-      targetDurationSec: ts.targetDurationSec,
-      pauseSec: 0,
-      lock: 'none',
-      notes: ts.description,
-      assets: [],
-      aiRevisions: [],
-    }));
-    this._project.set({
-      id: uid(),
-      title: title?.trim() || template.name,
-      type: category.projectType,
-      orientation: template.orientation,
-      targetDurationSec: scenes.reduce((sum, s) => sum + s.targetDurationSec, 0),
-      speakingWpm: 145,
-      scenes,
-      takes: [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      blocks: [],
-    });
+    this._project.set(projectFromTemplate(template, title));
   }
 
   // --- Scene CRUD ---
@@ -198,7 +215,7 @@ export class ProjectStore {
     this._project.update(p => ({
       ...p,
       scenes: p.scenes.map(s => (s.id === id ? { ...s, ...patch } : s)),
-      updatedAt: new Date().toISOString(),
+      updatedAt: this.stamp(p.updatedAt),
     }));
   }
 
@@ -209,7 +226,7 @@ export class ProjectStore {
       blocks: (p.blocks ?? [])
         .map(b => ({ ...b, sceneIds: b.sceneIds.filter(sid => sid !== id) }))
         .filter(b => b.sceneIds.length > 0),
-      updatedAt: new Date().toISOString(),
+      updatedAt: this.stamp(p.updatedAt),
     }));
   }
 
@@ -223,7 +240,7 @@ export class ProjectStore {
       return {
         ...p,
         scenes: sorted.map((s, i) => ({ ...s, order: i })),
-        updatedAt: new Date().toISOString(),
+        updatedAt: this.stamp(p.updatedAt),
       };
     });
   }
@@ -241,7 +258,7 @@ export class ProjectStore {
       return {
         ...p,
         scenes: sorted.map((scene, index) => ({ ...scene, order: index })),
-        updatedAt: new Date().toISOString(),
+        updatedAt: this.stamp(p.updatedAt),
       };
     });
   }
@@ -259,7 +276,7 @@ export class ProjectStore {
           targetDurationSec: this.timing.estimateDuration(s.script, wpm, s.pauseSec),
         };
       }),
-      updatedAt: new Date().toISOString(),
+      updatedAt: this.stamp(p.updatedAt),
     }));
   }
 
@@ -274,7 +291,7 @@ export class ProjectStore {
     this._project.update(p => ({
       ...p,
       takes: [...p.takes, { ...take, id: uid() }],
-      updatedAt: new Date().toISOString(),
+      updatedAt: this.stamp(p.updatedAt),
     }));
   }
 
@@ -282,7 +299,7 @@ export class ProjectStore {
   readonly blocks = computed(() => this.project()?.blocks ?? []);
 
   updateProject(patch: (p: VideoProject) => VideoProject) {
-    this._project.update(p => ({ ...patch(p), updatedAt: new Date().toISOString() }));
+    this._project.update(p => ({ ...patch(p), updatedAt: this.stamp(p.updatedAt) }));
   }
 
   createBlock(sceneIds: string[], title?: string): SceneBlock | null {
@@ -383,7 +400,7 @@ export class ProjectStore {
       ...p,
       scenes: nextScenes,
       blocks,
-      updatedAt: new Date().toISOString(),
+      updatedAt: this.stamp(p.updatedAt),
     }));
 
     this.toast.show(`Merged ${toMerge.length} scenes into one.`);

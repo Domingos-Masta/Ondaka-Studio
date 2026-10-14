@@ -7,6 +7,7 @@ import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { ProjectStore } from '../../core/services/project/project.store';
 import type { SceneBlock } from '../../core/models/scene-block.model';
+import { sanitizeEditorHtml } from '../../core/security/html-sanitizer';
 
 
 @Component({
@@ -194,7 +195,7 @@ export class PresenterComponent {
       if (block) shown.add(block.id);
       return {
         scene,
-        html: this.sanitizer.bypassSecurityTrustHtml(scene.script),
+        html: this.safeHtml(scene.script),
         block,
         showBlockHeader,
       };
@@ -204,8 +205,16 @@ export class PresenterComponent {
   readonly scriptHtml = computed<SafeHtml>(() => {
     const s = this.scene();
     if (!s) return this.sanitizer.bypassSecurityTrustHtml('— End of video —');
-    return this.sanitizer.bypassSecurityTrustHtml(s.script);
+    return this.safeHtml(s.script);
   });
+
+  /**
+   * The presenter is the only view that keeps inline editor styling, so the
+   * HTML is allow-list sanitized here before it is trusted.
+   */
+  private safeHtml(html: string): SafeHtml {
+    return this.sanitizer.bypassSecurityTrustHtml(sanitizeEditorHtml(html));
+  }
 
   setContinuousMode(): void {
     this.mode.set('continuous');

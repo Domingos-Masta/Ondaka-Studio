@@ -1,4 +1,8 @@
 import { SceneBlock } from "./scene-block.model";
+import { escapeHtml, sanitizeEditorHtml } from "../security/html-sanitizer";
+
+/** Detects prose that already carries editor markup instead of plain text. */
+const EDITOR_HTML = /<(?:p|div|br|h[1-6]|ul|ol|li|blockquote|table|details)\b[^>]*>/i;
 
 export type SceneRole =
   | 'hook' | 'intro' | 'setup' | 'point'
@@ -108,13 +112,11 @@ export interface AiRevision {
 export function toEditorHtml(value: unknown): string {
   const text = String(value ?? '');
   if (!text) return '';
-  if (/<(?:p|div|br|h[1-6]|ul|ol|li|blockquote)\b[^>]*>/i.test(text)) return text;
+  // Markup produced by the editor is kept, but never trusted: it is allow-list
+  // sanitized so imported files and AI output cannot smuggle HTML in.
+  if (EDITOR_HTML.test(text)) return sanitizeEditorHtml(text);
 
-  const escaped = text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-  return escaped
+  return escapeHtml(text)
     .split(/\n{2,}/)
     .map(paragraph => `<p>${paragraph.replace(/\n/g, '<br>')}</p>`)
     .join('');

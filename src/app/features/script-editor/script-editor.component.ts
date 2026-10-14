@@ -115,6 +115,7 @@ import { renderTemplate } from '../../core/models/ai/adapters/prompt-builder';
             outputFormat="html"
             [attr.data-scene-id]="s.id"
             (editorCreated)="onEditorCreated($any($event))"
+            (editorDestroyed)="onEditorDestroyed()"
             (contentUpdated)="onContentUpdated($any($event).editor.getHTML())">
           </domternal-editor>
           }
@@ -262,7 +263,7 @@ export class ScriptEditorComponent {
   private readonly syncEditorScene = effect(() => {
     const scene = this.scene();
     const editor = this.editor();
-    if (!scene || !editor) {
+    if (!scene || !editor || editor.isDestroyed) {
       this.editorSceneId.set(null);
       return;
     }
@@ -313,6 +314,13 @@ export class ScriptEditorComponent {
 
 
   onEditorCreated(editor: Editor) { this.editor.set(editor); }
+
+  /** The editor is torn down when the workspace shows a project without scenes
+   *  (e.g. switching to an empty tab) — drop the stale reference. */
+  onEditorDestroyed() {
+    this.editor.set(null);
+    this.editorSceneId.set(null);
+  }
 
   onContentUpdated(html: string) {
     const s = this.scene();

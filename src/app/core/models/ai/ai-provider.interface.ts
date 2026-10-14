@@ -1,5 +1,3 @@
-import { AiProviderType, AiProviderConfig } from '../app-settings.model';
-
 export interface AiMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;
@@ -17,19 +15,28 @@ export interface AiCompletionResponse {
   usage?: { promptTokens?: number; completionTokens?: number };
   /** Provider-specific completion stop reason, e.g. "length", "max_tokens", "stop". */
   finishReason?: string;
-  raw: unknown;
+  /** Raw provider payload (never leaves the main process for a real call). */
+  raw?: unknown;
 }
 
-export interface AiProviderAdapter {
-  readonly type: AiProviderType;
-  complete(config: AiProviderConfig, req: AiCompletionRequest): Promise<AiCompletionResponse>;
-  test(config: AiProviderConfig): Promise<boolean>;
+export interface AiErrorOptions {
+  /** HTTP status of the failed provider call, when there was one. */
+  status?: number;
+  /** Raw provider payload, when there was one. */
+  raw?: unknown;
+  /** The underlying failure, kept so debugging keeps the original stack. */
+  cause?: unknown;
 }
 
 export class AiError extends Error {
-  constructor(message: string, public readonly status?: number, public readonly raw?: unknown) {
-    super(message);
+  readonly status?: number;
+  readonly raw?: unknown;
+
+  constructor(message: string, options: AiErrorOptions = {}) {
+    super(message, options.cause === undefined ? undefined : { cause: options.cause });
     this.name = 'AiError';
+    this.status = options.status;
+    this.raw = options.raw;
   }
 }
 

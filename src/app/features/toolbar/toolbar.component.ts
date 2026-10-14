@@ -88,7 +88,7 @@ import { SaveTemplateDialogComponent } from '../../shared/components/save-templa
 
       <input class="bg-transparent text-sm px-2 py-1 rounded hover:bg-surface-2
                     focus:bg-surface-2 outline-none w-48 min-w-0"
-             [(ngModel)]="title"
+             [ngModel]="title"
              (ngModelChange)="store.patch({ title: $event })"
              placeholder="Project title" />
 

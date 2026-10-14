@@ -1,5 +1,7 @@
-// app/preload.ts
-import { contextBridge, ipcRenderer } from 'electron';
+// app/preload.cts — CommonJS so it can run inside a sandboxed renderer.
+import electron = require('electron');
+
+const { contextBridge, ipcRenderer } = electron;
 
 export interface ProjectSummary {
   id: string;
@@ -11,7 +13,8 @@ export interface ProjectSummary {
 export type MenuAction =
   | 'new' | 'open' | 'save' | 'saveAs'
   | 'generate' | 'import' | 'settings'
-  | 'present' | 'chapters' | 'export' | 'fitTime' | 'saveTemplate';
+  | 'present' | 'chapters' | 'export' | 'fitTime' | 'saveTemplate'
+  | 'newTab' | 'closeTab' | 'nextTab' | 'prevTab';
 
 contextBridge.exposeInMainWorld('api', {
   // Projects
@@ -47,6 +50,13 @@ contextBridge.exposeInMainWorld('api', {
   settings: {
     getAll: () => ipcRenderer.invoke('settings:getAll'),
     patch: (partial: unknown) => ipcRenderer.invoke('settings:patch', partial),
+  },
+
+  // AI — provider keys live in the main process; the renderer only sends requests.
+  ai: {
+    complete: (payload: { providerId?: string | null; request: unknown }) =>
+      ipcRenderer.invoke('ai:complete', payload),
+    test: (payload: { provider: unknown }) => ipcRenderer.invoke('ai:test', payload),
   },
 
   // Templates
@@ -93,6 +103,10 @@ declare global {
       settings: {
         getAll: () => Promise<unknown>;
         patch: (partial: unknown) => Promise<void>;
+      };
+      ai: {
+        complete: (payload: { providerId?: string | null; request: unknown }) => Promise<unknown>;
+        test: (payload: { provider: unknown }) => Promise<boolean>;
       };
       templates: {
         getAll: () => Promise<unknown[]>;

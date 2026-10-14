@@ -1,8 +1,10 @@
 import { settingsStore } from './settings-store.js';
 import { recentStore } from './recent-store.js';
 import { templatesStore } from './templates-store.js';
+import { completeWithProvider, parseProvider, parseRequest, testProvider } from './ai-proxy.js';
+import type { AppSettings } from './app-settings.model.js';
 // app/main.ts
-import { app, BrowserWindow, ipcMain, dialog, shell, systemPreferences, Menu } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, shell, session, systemPreferences, Menu } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import { fileURLToPath } from 'url';
@@ -10,13 +12,25 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const isDev = !app.isPackaged;
 const PROJECT_FILTERS = [{ name: 'Ondaka Studio Project', extensions: ['swproj'] }];
+const DEV_SERVER_URL = 'http://localhost:4200';
+
+/** Upper bounds for renderer payloads (bytes / string length). */
+const MAX_TAKE_BYTES = 256 * 1024 * 1024;
+const MAX_DOCUMENT_BYTES = 64 * 1024 * 1024;
 
 let win: BrowserWindow | null = null;
 let aboutWin: BrowserWindow | null = null;
 let pendingOpenPath: string | null = null;
 
-// A single app instance — a double-clicked .swproj while the app is running is
-// forwarded to the existing instance via the `second-instance` event.
+/**
+ * Files the user explicitly opened or saved in this session. A renderer may
+ * only write back to one of these, so a compromised page cannot drop files
+ * anywhere on disk.
+ */
+const userFiles = new Set<string>();
+
+/** A single app instance — a double-clicked .swproj while the app is running is
+ * forwarded to the existing instance via the `second-instance` event. */
 const gotSingleInstanceLock = app.requestSingleInstanceLock();
 if (!gotSingleInstanceLock) {
   app.quit();
@@ -30,6 +44,85 @@ async function ensureDir(p: string) {
   await fs.mkdir(p, { recursive: true });
 }
 
+/** Rejects ids that could escape the directory they are joined into. */
+function safeId(value: unknown, label: string): string {
+  if (typeof value !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(value)) {
+    throw new Error(`Invalid ${label}`);
+  }
+  return value;
+}
+
+/** Resolves `file` inside `dir`, refusing anything that escapes it. */
+function resolveInside(dir: string, file: string): string {
+  const root = path.resolve(dir);
+  const resolved = path.resolve(root, file);
+  if (resolved !== root && !resolved.startsWith(root + path.sep)) {
+    throw new Error('Path escapes the projects directory');
+  }
+  return resolved;
+}
+
+function projectsRoot(): string {
+  return path.resolve(projectsDir());
+}
+
+/** Remembers a file the user picked so it can be written back to later. */
+function trustUserFile(filePath: unknown): string | null {
+  if (typeof filePath !== 'string' || !filePath.toLowerCase().endsWith('.swproj')) return null;
+  const resolved = path.resolve(filePath);
+  userFiles.add(resolved);
+  return resolved;
+}
+
+/**
+ * Writes through a temporary file in the same directory and renames it into
+ * place, so a crash or an overlapping write can never leave a half-written
+ * (unparseable) project on disk.
+ */
+async function writeFileAtomic(file: string, data: string | Uint8Array): Promise<void> {
+  const tmp = `${file}.${process.pid}.${Date.now()}.tmp`;
+  try {
+    await fs.writeFile(tmp, data);
+    await fs.rename(tmp, file);
+  } catch (err) {
+    await fs.rm(tmp, { force: true }).catch(() => { });
+    throw err;
+  }
+}
+
+function jsonBody(value: unknown): string {
+  const json = JSON.stringify(value);
+  if (json.length > MAX_DOCUMENT_BYTES) throw new Error('Document is too large to save');
+  return json;
+}
+
+/** Rejects non-plain-object payloads coming from the renderer. */
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === 'object' && !Array.isArray(value);
+}
+
+/** Only well-formed, plain-extension filters are forwarded to the native dialog. */
+function sanitizeFilters(filters: unknown): Electron.FileFilter[] | undefined {
+  if (!Array.isArray(filters)) return undefined;
+  const clean: Electron.FileFilter[] = [];
+  for (const entry of filters.slice(0, 10)) {
+    if (!isPlainObject(entry)) continue;
+    const { name, extensions } = entry as { name?: unknown; extensions?: unknown };
+    if (typeof name !== 'string' || !Array.isArray(extensions)) continue;
+    const exts = extensions.filter((e): e is string => typeof e === 'string' && /^[A-Za-z0-9]+$/.test(e));
+    if (exts.length) clean.push({ name: name.slice(0, 64), extensions: exts });
+  }
+  return clean.length ? clean : undefined;
+}
+
+function isInternalUrl(url: string): boolean {
+  return isDev ? url.startsWith(DEV_SERVER_URL) : url.startsWith('file://');
+}
+
+function isExternalUrl(url: string): boolean {
+  return /^https?:\/\//i.test(url);
+}
+
 function pathFromArgv(argv: string[]): string | null {
   for (const arg of argv.slice(1)) {
     if (arg.toLowerCase().endsWith('.swproj')) return arg;
@@ -41,6 +134,7 @@ async function readAndSendProject(filePath: string): Promise<void> {
   try {
     const raw = await fs.readFile(filePath, 'utf-8');
     const project = JSON.parse(raw);
+    trustUserFile(filePath);
     addRecentFile(filePath, (project as { title?: string })?.title);
     win?.webContents.send('project:opened-externally', { filePath, project });
   } catch (err) {
@@ -96,16 +190,19 @@ function createWindow() {
     backgroundColor: '#0a0a0b',
     titleBarStyle: 'default',
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
+      preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: false,
+      sandbox: true,
+      webSecurity: true,
+      allowRunningInsecureContent: false,
+      experimentalFeatures: false,
     },
   });
 
   if (isDev) {
-    console.log('Loading Dev Mode:', 'http://localhost:4200');
-    win.loadURL('http://localhost:4200');
+    console.log('Loading Dev Mode:', DEV_SERVER_URL);
+    win.loadURL(DEV_SERVER_URL);
     win.webContents.openDevTools({ mode: 'detach' });
   } else {
     const indexPath = path.join(__dirname, '../../dist/browser/index.html');
@@ -139,7 +236,7 @@ function createAboutWindow() {
     title: 'About Ondaka Studio',
     parent: win ?? undefined,
     modal: true,
-    webPreferences: { contextIsolation: true, nodeIntegration: false },
+    webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true },
   });
   aboutWin.on('closed', () => { aboutWin = null; });
   void aboutWin.loadURL(`data:text/html;charset=UTF-8,${encodeURIComponent(`
@@ -181,6 +278,7 @@ function installApplicationMenu() {
       label: 'File',
       submenu: [
         { label: 'New Project', accelerator: 'CmdOrCtrl+N', click: sendAction('new') },
+        { label: 'New Tab', accelerator: 'CmdOrCtrl+T', click: sendAction('newTab') },
         { label: 'Open Project…', accelerator: 'CmdOrCtrl+O', click: sendAction('open') },
         { label: 'Open Recent', submenu: buildRecentMenu() },
         { label: 'Save Project', accelerator: 'CmdOrCtrl+S', click: sendAction('save') },
@@ -189,7 +287,20 @@ function installApplicationMenu() {
         { label: 'Import Script…', click: sendAction('import') },
         { label: 'Export Plan', click: sendAction('export') },
         { type: 'separator' },
-        { role: 'close' },
+        { label: 'Close Tab', accelerator: 'CmdOrCtrl+W', click: sendAction('closeTab') },
+        { label: 'Close Window', accelerator: 'Shift+CmdOrCtrl+W', role: 'close' },
+      ],
+    },
+    {
+      label: 'Window',
+      submenu: [
+        { label: 'Next Tab', accelerator: 'Ctrl+Tab', click: sendAction('nextTab') },
+        { label: 'Previous Tab', accelerator: 'Ctrl+Shift+Tab', click: sendAction('prevTab') },
+        { type: 'separator' },
+        { role: 'minimize' },
+        { role: 'zoom' },
+        { type: 'separator' },
+        { role: 'front' },
       ],
     },
     {
@@ -253,10 +364,44 @@ app.on('second-instance', (_event, argv) => {
   }
 });
 
+// ---------------------------------------------------------------------------
+// Hardening — navigation, window opening, permissions
+// ---------------------------------------------------------------------------
+
+/** Permissions the app itself needs (microphone for rehearsal, clipboard copy). */
+const ALLOWED_PERMISSIONS = new Set(['media', 'clipboard-read', 'clipboard-sanitized-write']);
+
+// The window keeps its privileged preload bridge, so it must never navigate
+// away from the app. External links open in the user's browser instead, and
+// nothing may embed a <webview>.
+app.on('web-contents-created', (_event, contents) => {
+  contents.setWindowOpenHandler(({ url }) => {
+    if (isExternalUrl(url)) void shell.openExternal(url);
+    return { action: 'deny' };
+  });
+
+  contents.on('will-navigate', (event, url) => {
+    if (isInternalUrl(url)) return;
+    event.preventDefault();
+    if (isExternalUrl(url)) void shell.openExternal(url);
+  });
+
+  contents.on('will-attach-webview', (event) => {
+    event.preventDefault();
+  });
+});
+
 app.whenReady().then(async () => {
   if (!gotSingleInstanceLock) return;
 
   await ensureDir(projectsDir());
+
+  // Only the app's own pages may use privileged APIs; everything else is denied.
+  session.defaultSession.setPermissionRequestHandler((contents, permission, callback) => {
+    callback(ALLOWED_PERMISSIONS.has(permission) && isInternalUrl(contents?.getURL() ?? ''));
+  });
+  session.defaultSession.setPermissionCheckHandler((_contents, permission, requestingOrigin) =>
+    ALLOWED_PERMISSIONS.has(permission) && isInternalUrl(requestingOrigin));
 
   // macOS microphone permission
   if (process.platform === 'darwin') {
@@ -291,7 +436,7 @@ ipcMain.handle('projects:list', async () => {
   for (const f of files) {
     if (!f.endsWith('.json')) continue;
     try {
-      const raw = await fs.readFile(path.join(dir, f), 'utf-8');
+      const raw = await fs.readFile(resolveInside(dir, f), 'utf-8');
       const p = JSON.parse(raw);
       out.push({ id: p.id, title: p.title, updatedAt: p.updatedAt, path: f });
     } catch { /* skip malformed */ }
@@ -302,19 +447,20 @@ ipcMain.handle('projects:list', async () => {
 ipcMain.handle('projects:save', async (_e, project: { id: string }) => {
   const dir = projectsDir();
   await ensureDir(dir);
-  const file = path.join(dir, `${project.id}.json`);
-  await fs.writeFile(file, JSON.stringify(project, null, 2), 'utf-8');
+  if (!project || typeof project !== 'object') throw new Error('Invalid project payload');
+  const file = resolveInside(dir, `${safeId(project.id, 'project id')}.json`);
+  await writeFileAtomic(file, jsonBody(project));
   return file;
 });
 
 ipcMain.handle('projects:load', async (_e, id: string) => {
-  const file = path.join(projectsDir(), `${id}.json`);
+  const file = resolveInside(projectsDir(), `${safeId(id, 'project id')}.json`);
   const raw = await fs.readFile(file, 'utf-8');
   return JSON.parse(raw);
 });
 
 ipcMain.handle('projects:delete', async (_e, id: string) => {
-  const file = path.join(projectsDir(), `${id}.json`);
+  const file = resolveInside(projectsDir(), `${safeId(id, 'project id')}.json`);
   await fs.unlink(file).catch(() => { });
   return true;
 });
@@ -324,15 +470,19 @@ ipcMain.handle('projects:delete', async (_e, id: string) => {
 // ---------------------------------------------------------------------------
 
 ipcMain.handle('takes:save', async (_e, payload: { projectId: string; takeId: string; buffer: ArrayBuffer }) => {
-  const dir = path.join(projectsDir(), payload.projectId, 'takes');
+  if (!payload || !(payload.buffer instanceof ArrayBuffer)) throw new Error('Invalid take payload');
+  if (payload.buffer.byteLength > MAX_TAKE_BYTES) throw new Error('Recording is too large to save');
+  const projectId = safeId(payload.projectId, 'project id');
+  const takeId = safeId(payload.takeId, 'take id');
+  const dir = resolveInside(projectsRoot(), path.join(projectId, 'takes'));
   await ensureDir(dir);
-  const file = path.join(dir, `${payload.takeId}.webm`);
-  await fs.writeFile(file, Buffer.from(payload.buffer));
+  const file = resolveInside(dir, `${takeId}.webm`);
+  await writeFileAtomic(file, Buffer.from(payload.buffer));
   return file;
 });
 
 ipcMain.handle('takes:open-folder', async (_e, projectId: string) => {
-  const dir = path.join(projectsDir(), projectId, 'takes');
+  const dir = resolveInside(projectsRoot(), path.join(safeId(projectId, 'project id'), 'takes'));
   await ensureDir(dir);
   await shell.openPath(dir);
   return true;
@@ -343,46 +493,58 @@ ipcMain.handle('takes:open-folder', async (_e, projectId: string) => {
 // ---------------------------------------------------------------------------
 
 ipcMain.handle('export:save-text', async (_e, payload: { suggestedName: string; content: string }) => {
+  if (!payload || typeof payload.content !== 'string') throw new Error('Invalid export payload');
   const res = await dialog.showSaveDialog(win!, {
-    defaultPath: payload.suggestedName,
+    defaultPath: path.basename(String(payload.suggestedName ?? 'export.txt')),
     filters: [{ name: 'Text', extensions: ['txt', 'csv', 'md'] }],
   });
   if (res.canceled || !res.filePath) return null;
-  await fs.writeFile(res.filePath, payload.content, 'utf-8');
+  await writeFileAtomic(res.filePath, payload.content);
   return res.filePath;
 });
 
 ipcMain.handle('export:save-binary', async (_e, payload: { suggestedName: string; buffer: ArrayBuffer }) => {
-  const res = await dialog.showSaveDialog(win!, { defaultPath: payload.suggestedName });
+  if (!payload || !(payload.buffer instanceof ArrayBuffer)) throw new Error('Invalid export payload');
+  if (payload.buffer.byteLength > MAX_TAKE_BYTES) throw new Error('Export is too large to save');
+  const res = await dialog.showSaveDialog(win!, {
+    defaultPath: path.basename(String(payload.suggestedName ?? 'export.bin')),
+  });
   if (res.canceled || !res.filePath) return null;
-  await fs.writeFile(res.filePath, Buffer.from(payload.buffer));
+  await writeFileAtomic(res.filePath, Buffer.from(payload.buffer));
   return res.filePath;
 });
 
 ipcMain.handle('dialog:open-file', async (_e, filters?: { name: string; extensions: string[] }[]) => {
-  const res = await dialog.showOpenDialog(win!, { properties: ['openFile'], filters });
-  return res.canceled ? null : res.filePaths[0];
+  const res = await dialog.showOpenDialog(win!, {
+    properties: ['openFile'],
+    filters: sanitizeFilters(filters),
+  });
+  return res.canceled ? null : res.filePaths[0] ?? null;
 });
 
 
 ipcMain.handle('project:save-as', async (_e, payload: { envelope: unknown; suggestedName: string }) => {
   const res = await dialog.showSaveDialog(win!, {
-    defaultPath: payload.suggestedName,
+    defaultPath: path.basename(String(payload?.suggestedName ?? 'untitled.swproj')),
     filters: PROJECT_FILTERS,
   });
   if (res.canceled || !res.filePath) return null;
-  await fs.writeFile(res.filePath, JSON.stringify(payload.envelope, null, 2), 'utf-8');
-  addRecentFile(res.filePath, (payload.envelope as { project?: { title?: string } })?.project?.title);
-  return res.filePath;
+  const target = trustUserFile(res.filePath);
+  if (!target) throw new Error('Invalid .swproj path');
+  await writeFileAtomic(target, jsonBody(payload.envelope));
+  addRecentFile(target, (payload.envelope as { project?: { title?: string } })?.project?.title);
+  return target;
 });
 
 ipcMain.handle('project:save-to-path', async (_e, payload: { filePath: string; envelope: unknown }) => {
-  if (typeof payload.filePath !== 'string' || !payload.filePath.endsWith('.swproj')) {
-    throw new Error('Invalid .swproj path');
+  const target = typeof payload?.filePath === 'string' ? path.resolve(payload.filePath) : '';
+  // Only paths the user opened or chose in a save dialog may be written to.
+  if (!target || !userFiles.has(target)) {
+    throw new Error('Refusing to write to a path this session did not grant');
   }
-  await fs.writeFile(payload.filePath, JSON.stringify(payload.envelope, null, 2), 'utf-8');
-  addRecentFile(payload.filePath, (payload.envelope as { project?: { title?: string } })?.project?.title);
-  return payload.filePath;
+  await writeFileAtomic(target, jsonBody(payload.envelope));
+  addRecentFile(target, (payload.envelope as { project?: { title?: string } })?.project?.title);
+  return target;
 });
 
 ipcMain.handle('project:open-file', async () => {
@@ -391,7 +553,8 @@ ipcMain.handle('project:open-file', async () => {
     filters: PROJECT_FILTERS,
   });
   if (res.canceled || !res.filePaths[0]) return null;
-  const filePath = res.filePaths[0];
+  const filePath = trustUserFile(res.filePaths[0]);
+  if (!filePath) return null;
   const raw = await fs.readFile(filePath, 'utf-8');
   const envelope = JSON.parse(raw);
   addRecentFile(filePath, (envelope as { project?: { title?: string } })?.project?.title);
@@ -399,21 +562,40 @@ ipcMain.handle('project:open-file', async () => {
 });
 
 ipcMain.handle('settings:getAll', () => settingsStore.getAll());
-ipcMain.handle('settings:patch', (_e, partial) => settingsStore.patch(partial));
+ipcMain.handle('settings:patch', (_e, partial: unknown) => {
+  if (!isPlainObject(partial)) throw new Error('Invalid settings patch');
+  return settingsStore.patch(partial as Partial<AppSettings>);
+});
+
+// ---------------------------------------------------------------------------
+// IPC — AI provider proxy
+// ---------------------------------------------------------------------------
+
+// Provider keys stay in the main process: the renderer sends the conversation,
+// main attaches the key and talks to the provider.
+ipcMain.handle('ai:complete', async (_e, payload: unknown) => {
+  const { providerId, request } = (payload ?? {}) as { providerId?: unknown; request?: unknown };
+  const config = settingsStore.getProvider(typeof providerId === 'string' ? providerId : undefined);
+  if (!config) throw new Error('No AI provider configured. Open Settings to add one.');
+  if (!config.enabled) throw new Error(`Provider "${config.name}" is disabled.`);
+  return completeWithProvider(config, parseRequest(request));
+});
+
+ipcMain.handle('ai:test', async (_e, payload: unknown) => {
+  const requested = parseProvider((payload as { provider?: unknown } | null)?.provider);
+  // An empty key means "use the one already stored for this provider".
+  const config = requested.apiKey
+    ? requested
+    : { ...requested, apiKey: settingsStore.getProvider(requested.id)?.apiKey };
+  return testProvider(config);
+});
 
 ipcMain.handle('templates:getAll', () => templatesStore.getAll());
 ipcMain.handle('templates:saveAll', (_e, templates: unknown[]) => {
+  if (!Array.isArray(templates) || templates.length > 500) throw new Error('Invalid templates payload');
   templatesStore.saveAll(templates);
   return true;
 });
 
-// Optional: secure at-rest storage for a specific API key using safeStorage
-// import { safeStorage } from 'electron';
-// ipcMain.handle('secure:encrypt', (_e, plain: string) => {
-//   if (!safeStorage.isEncryptionAvailable()) return { encrypted: false, value: plain };
-//   return { encrypted: true, value: safeStorage.encryptString(plain).toString('base64') };
-// });
-// ipcMain.handle('secure:decrypt', (_e, payload: { encrypted: boolean; value: string }) => {
-//   if (!payload.encrypted) return payload.value;
-//   return safeStorage.decryptString(Buffer.from(payload.value, 'base64'));
-// });
+// API key material is encrypted at rest by settings-store (OS backed when
+// Electron's safeStorage is available).

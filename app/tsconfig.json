@@ -69,7 +69,8 @@
 
   "include": [
     "main.ts",
-    "preload.ts",
+    "preload.cts",
+    "ai-proxy.ts",
     "settings-store.ts",
     "app-settings.model.ts",
     "recent-store.ts",

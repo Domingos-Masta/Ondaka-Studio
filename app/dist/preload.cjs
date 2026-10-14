@@ -1,5 +1,8 @@
-// app/preload.ts
-import { contextBridge, ipcRenderer } from 'electron';
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+// app/preload.cts — CommonJS so it can run inside a sandboxed renderer.
+const electron = require("electron");
+const { contextBridge, ipcRenderer } = electron;
 contextBridge.exposeInMainWorld('api', {
     // Projects
     listProjects: () => ipcRenderer.invoke('projects:list'),
@@ -22,6 +25,11 @@ contextBridge.exposeInMainWorld('api', {
         getAll: () => ipcRenderer.invoke('settings:getAll'),
         patch: (partial) => ipcRenderer.invoke('settings:patch', partial),
     },
+    // AI — provider keys live in the main process; the renderer only sends requests.
+    ai: {
+        complete: (payload) => ipcRenderer.invoke('ai:complete', payload),
+        test: (payload) => ipcRenderer.invoke('ai:test', payload),
+    },
     // Templates
     templates: {
         getAll: () => ipcRenderer.invoke('templates:getAll'),
@@ -43,4 +51,4 @@ contextBridge.exposeInMainWorld('api', {
         return () => ipcRenderer.removeListener('project:open-error', listener);
     },
 });
-//# sourceMappingURL=preload.js.map
+//# sourceMappingURL=preload.cjs.map

@@ -17,6 +17,11 @@
     "!*.map",
     "!package.json",
     "!package-lock.json",
+    "!**/.env*",
+    "!**/*.pem",
+    "!**/*.key",
+    "!**/*.p12",
+    "!**/*.pfx",
     {
       "from": "../dist",
       "filter": ["**/*"]
@@ -35,7 +40,11 @@
     "icon": "build/icons/ondaka-icon.icns",
     "target": [
       "dmg"
-    ]
+    ],
+    "hardenedRuntime": true,
+    "gatekeeperAssess": false,
+    "entitlements": "build/entitlements.mac.plist",
+    "entitlementsInherit": "build/entitlements.mac.plist"
   },
   "linux": {
     "icon": "build/icons/ondaka-icon.png",

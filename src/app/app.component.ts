@@ -6,9 +6,11 @@ import { TimingPanelComponent } from './features/timing-panel/timing-panel.compo
 import { TimelineStripComponent } from './features/timeline-strip/timeline-strip.component';
 import { PresenterComponent } from './features/presenter/presenter.component';
 import { ToolbarComponent } from './features/toolbar/toolbar.component';
+import { TabBarComponent } from './features/tab-bar/tab-bar.component';
 import { ChaptersDialogComponent } from './features/chapters-dialog/chapters-dialog.component';
 import { ToastHostComponent } from './features/toast-host/toast-host.component';
 import { ChaptersDialogService } from './core/services/chapters-dialog/chapters-dialog.service';
+import { AutosaveService } from './core/services/autosave/autosave.service';
 import { LayoutService } from './core/services/layout/layout.service';
 import { PresenterService } from './core/services/presenter/presenter.service';
 import { SettingsService } from './core/services/settings/settings.service';
@@ -18,6 +20,7 @@ import { SettingsService } from './core/services/settings/settings.service';
   standalone: true,
   imports: [
     ToolbarComponent,
+    TabBarComponent,
     SceneListComponent,
     ScriptEditorComponent,
     TimingPanelComponent,
@@ -30,6 +33,8 @@ import { SettingsService } from './core/services/settings/settings.service';
     <div class="h-screen flex flex-col bg-surface-0 text-zinc-200 overflow-hidden">
       <app-toolbar (toggleLeft)="layout.toggle('left')"
                    (toggleRight)="layout.toggle('right')" />
+
+      <app-tab-bar />
 
       <div class="flex-1 min-h-0 grid overflow-hidden transition-[grid-template-columns] duration-200"
            [style.grid-template-columns]="layout.gridTemplate()">
@@ -64,6 +69,8 @@ export class AppComponent implements OnInit {
   readonly chapters = inject(ChaptersDialogService);
   readonly layout = inject(LayoutService);
   readonly settings = inject(SettingsService);
+  /** Created here so the draft backups for every open tab are running. */
+  readonly autosave = inject(AutosaveService);
 
   // In AppComponent
   @HostListener('window:keydown', ['$event'])

@@ -51,9 +51,13 @@ export class SettingsService {
   }
 
   async updateProvider(id: string, patch: Partial<AiProviderConfig>): Promise<void> {
-    const providers = this._settings().providers.map(p =>
-      p.id === id ? { ...p, ...patch } : p
-    );
+    // The main process owns the key; mirror only what the UI needs to know.
+    const providers = this._settings().providers.map(p => {
+      if (p.id !== id) return p;
+      const next = { ...p, ...patch };
+      if (typeof patch.apiKey === 'string') next.hasApiKey = patch.apiKey.length > 0;
+      return next;
+    });
     await this.patch({ providers });
   }
 

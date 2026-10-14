@@ -1,14 +1,15 @@
 import { Injectable, inject } from '@angular/core';
-import { createAdapter } from './ai-adapter.factory';
 import { SettingsService } from '../../../services/settings/settings.service';
-import { ToastService } from '../../../services/toast/toast.service';
 import { AiProviderConfig } from '../../app-settings.model';
 import { AiCompletionRequest, AiCompletionResponse, AiError } from '../ai-provider.interface';
 
+/**
+ * Talks to AI providers through the main process, which holds the API keys —
+ * they never enter the renderer.
+ */
 @Injectable({ providedIn: 'root' })
 export class AiService {
   private settings = inject(SettingsService);
-  private toast = inject(ToastService);
 
   resolveProvider(providerId?: string): AiProviderConfig {
     const s = this.settings.settings();
@@ -22,16 +23,25 @@ export class AiService {
 
   async complete(req: AiCompletionRequest, providerId?: string): Promise<AiCompletionResponse> {
     const cfg = this.resolveProvider(providerId);
-    const adapter = createAdapter(cfg.type);
     try {
-      return await adapter.complete(cfg, req);
+      return await window.api.ai.complete({ providerId: cfg.id, request: req }) as AiCompletionResponse;
     } catch (err) {
-      if (err instanceof AiError) throw err;
-      throw new AiError(`AI request failed: ${(err as Error).message}`);
+      throw new AiError(`AI request failed: ${ipcMessage(err)}`, { cause: err });
     }
   }
 
+  /** Used by the settings dialog to verify a provider — including a key the user just typed. */
   async test(config: AiProviderConfig): Promise<boolean> {
-    return createAdapter(config.type).test(config);
+    try {
+      return await window.api.ai.test({ provider: config });
+    } catch (err) {
+      throw new Error(ipcMessage(err), { cause: err });
+    }
   }
+}
+
+/** Electron wraps IPC failures in `Error invoking remote method '<channel>': Error: …`. */
+function ipcMessage(err: unknown): string {
+  const message = err instanceof Error ? err.message : String(err);
+  return message.replace(/^Error invoking remote method '[^']*':\s*/, '').replace(/^Error:\s*/, '');
 }

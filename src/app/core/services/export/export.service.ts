@@ -54,8 +54,11 @@ export class ExportService {
   }
 
   private escapeCsv(value: string): string {
-    if (/[",\n]/.test(value)) return `"${value.replace(/"/g, '""')}"`;
-    return value;
+    // Spreadsheet apps evaluate cells starting with = + - @ (or tab/CR) as
+    // formulas, so neutralise them with a leading apostrophe.
+    const safe = /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
+    if (/[",\n]/.test(safe)) return `"${safe.replace(/"/g, '""')}"`;
+    return safe;
   }
 
   private slug() {

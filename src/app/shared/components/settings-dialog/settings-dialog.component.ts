@@ -91,8 +91,16 @@ const PRESETS: Record<AiProviderType, { baseUrl: string; model: string }> = {
             </label>
             <label class="col-span-2 block">
               <span class="text-xs text-neutral-500">API Key</span>
-              <input type="password" [(ngModel)]="p.apiKey" (ngModelChange)="saveProvider(p)"
-                     class="w-full rounded border border-neutral-700 bg-neutral-900 px-2 py-1 font-mono text-neutral-100" />
+              <div class="flex items-center gap-2">
+                <input type="password" [(ngModel)]="p.apiKey" (ngModelChange)="saveProvider(p)"
+                       [placeholder]="p.hasApiKey ? '•••••••• stored — type to replace' : 'sk-…'"
+                       class="w-full rounded border border-neutral-700 bg-neutral-900 px-2 py-1 font-mono text-neutral-100" />
+                @if (p.hasApiKey) {
+                  <button class="shrink-0 rounded border border-neutral-700 px-2 py-1 text-xs text-neutral-300 hover:bg-neutral-800"
+                          (click)="clearKey(p)">Remove key</button>
+                }
+              </div>
+              <span class="text-[11px] text-neutral-500">Stored securely on this machine and only used by the app.</span>
             </label>
           </div>
           <div class="mt-2 flex items-center gap-2">
@@ -212,6 +220,13 @@ export class SettingsDialogComponent {
 
   async saveProvider(p: AiProviderConfig): Promise<void> {
     await this.settings.updateProvider(p.id, p);
+  }
+
+  /** Clears the stored key without touching the rest of the provider. */
+  async clearKey(p: AiProviderConfig): Promise<void> {
+    p.apiKey = '';
+    await this.settings.updateProvider(p.id, { apiKey: '' });
+    p.apiKey = undefined;
   }
 
   async setDefault(id: string): Promise<void> {

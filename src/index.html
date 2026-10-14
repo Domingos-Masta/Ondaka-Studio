@@ -6,6 +6,15 @@
   <base href="./">
 
   <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!--
+    Electron renderer hardening: only the app's own scripts may run; remote code
+    and inline event handlers are blocked. 'unsafe-inline' is limited to styles
+    because Angular injects component CSS and inline style attributes, and the
+    localhost entries keep the dev server (ng serve) usable.
+  -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https: http://localhost:*; font-src 'self' data:; media-src 'self' blob: data:; connect-src 'self' https: http://localhost:* ws://localhost:*; object-src 'none'; frame-src 'none'; worker-src 'self' blob:; base-uri 'self'; form-action 'none'">
+
   <link rel="icon" type="image/x-icon" href="assets/icons/favicon.svg">
 </head>
 <body>

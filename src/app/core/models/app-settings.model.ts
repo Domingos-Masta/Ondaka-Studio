@@ -5,7 +5,13 @@ export interface AiProviderConfig {
   name: string;
   type: AiProviderType;
   baseUrl: string;
-  apiKey: string;
+  /**
+   * Only set while the user types a new key: the main process stores keys and
+   * never hands them back to the renderer (`hasApiKey` tells the UI one exists).
+   */
+  apiKey?: string;
+  /** Derived by the main process — true when a key is stored for this provider. */
+  hasApiKey?: boolean;
   model: string;
   enabled: boolean;
   createdAt: string;
