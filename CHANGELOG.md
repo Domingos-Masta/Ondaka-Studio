@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [Unreleased]
 
+## [1.0.8] - 2026-10-14
+
 ### Added
 
 - Multiple open scripts in tabs. Every tab is a complete workspace with its own scenes, editor, file path, unsaved-changes indicator and selected scene; closing a tab with unsaved work asks first, and the last tab is always replaced by a fresh one.
